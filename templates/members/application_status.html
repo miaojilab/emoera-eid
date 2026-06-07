@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+
+{% block title %}申请状态{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-md-12">
+            <!-- 页面头部 -->
+            <div class="card shadow-lg border-0 mb-4" style="border-radius: 15px;">
+                <div class="card-header bg-gradient text-white py-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px 15px 0 0;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>申请状态</h2>
+                        <span class="badge bg-light text-primary fs-6 status-badge">
+                            {% if application.status == 'pending' %}待审核
+                            {% elif application.status == 'interview_sent' %}笔试通知已发送
+                            {% elif application.status == 'offer_sent' %}录取通知已发送
+                            {% elif application.status == 'offer_confirmed' %}Offer已确认
+                            {% elif application.status == 'rejected' %}已拒绝
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- 申请基本信息 -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="text-muted small">申请人</label>
+                                <p class="fw-bold mb-2">{{ application.real_name }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="text-muted small">申请时间</label>
+                                <p class="fw-bold mb-2">{{ application.created_at|date:"Y年m月d日 H:i" }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="text-muted small">外部认证状态</label>
+                                <p class="mb-2">
+                                    <span class="badge bg-{% if application.external_verified %}success{% else %}warning{% endif %}">
+                                        {% if application.external_verified %}已认证{% else %}未认证{% endif %}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="text-muted small">最后更新</label>
+                                <p class="fw-bold mb-2">{{ application.updated_at|date:"Y年m月d日 H:i" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 状态进度条 -->
+                    <div class="mb-4">
+                        <h5 class="mb-3"><i class="fas fa-route me-2"></i>申请进度</h5>
+                        <div class="progress mb-3" style="height: 8px;">
+                            <div class="progress-bar bg-primary" role="progressbar" 
+                                 style="width: {% if application.status == 'pending' %}25%{% elif application.status == 'interview_sent' %}50%{% elif application.status == 'offer_sent' %}75%{% elif application.status == 'offer_confirmed' %}100%{% else %}25%{% endif %}">
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <small class="text-{% if application.status == 'pending' or application.status == 'interview_sent' or application.status == 'offer_sent' or application.status == 'offer_confirmed' %}primary{% else %}muted{% endif %} fw-bold">提交申请</small>
+                            <small class="text-{% if application.status == 'interview_sent' or application.status == 'offer_sent' or application.status == 'offer_confirmed' %}primary{% else %}muted{% endif %} fw-bold">笔试通知</small>
+                            <small class="text-{% if application.status == 'offer_sent' or application.status == 'offer_confirmed' %}primary{% else %}muted{% endif %} fw-bold">录取通知</small>
+                            <small class="text-{% if application.status == 'offer_confirmed' %}primary{% else %}muted{% endif %} fw-bold">完成</small>
+                        </div>
+                    </div>
+                    
+                    <!-- 状态具体信息 -->
+                    <div class="status-content">
+                        {% if application.status == 'pending' %}
+                        <div class="alert alert-info border-0 shadow-sm" style="border-radius: 10px;">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-clock fs-2 me-3 text-info"></i>
+                                <div>
+                                    <h5 class="alert-heading mb-2">等待审核</h5>
+                                    <p class="mb-0">您的申请已提交成功，请耐心等待管理员审核。我们会尽快处理您的申请。</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% elif application.status == 'interview_sent' %}
+                        <div class="alert alert-success border-0 shadow-sm" style="border-radius: 10px;">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle fs-2 me-3 text-success"></i>
+                                <div>
+                                    <h5 class="alert-heading mb-2">您已通过初筛</h5>
+                                    <p class="mb-2">已向您的邮箱发送笔试通知，请查收。如有疑问，请联系管理员。</p>
+                                    {% if application.interview_sent_at %}
+                                    <small class="text-muted">笔试通知发送时间：{{ application.interview_sent_at|date:"Y年m月d日 H:i" }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% elif application.status == 'offer_sent' %}
+                        <div class="alert alert-success border-0 shadow-sm mb-3" style="border-radius: 10px;">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-trophy fs-2 me-3 text-warning"></i>
+                                <div>
+                                    <h5 class="alert-heading mb-2">恭喜您被录取！</h5>
+                                    <p class="mb-2">您已被录取，请检查邮箱及时确认offer。</p>
+                                    {% if application.offer_sent_at %}
+                                    <small class="text-muted">录取通知发送时间：{{ application.offer_sent_at|date:"Y年m月d日 H:i" }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Offer确认状态 -->
+                        <div class="card border-0 bg-light" style="border-radius: 10px;">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="fas fa-handshake me-2"></i>Offer确认状态</h6>
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="fas fa-{% if application.offer_confirmed_at %}check-circle text-success{% else %}clock text-warning{% endif %} fs-4 me-3"></i>
+                                    <span class="fs-6">
+                                        {% if application.offer_confirmed_at %}Offer已确认{% else %}等待Offer确认{% endif %}
+                                    </span>
+                                </div>
+                                {% if not application.offer_confirmed_at %}
+                                <a href="{% url 'confirm_offer' application.offer_uuid %}" target="_blank" class="btn btn-primary">
+                                    <i class="fas fa-external-link-alt me-2"></i>确认Offer
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% elif application.status == 'offer_confirmed' %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-star fs-1 text-warning mb-4"></i>
+                            <h3 class="text-success mb-3">欢迎加入E时代！</h3>
+                            <p class="text-muted mb-4">您已成功确认offer并加入我们的团队。期待与您一起创造精彩！</p>
+                            {% if application.offer_confirmed_at %}
+                            <small class="text-muted">Offer确认时间：{{ application.offer_confirmed_at|date:"Y年m月d日 H:i" }}</small>
+                            {% endif %}
+                        </div>
+                        
+                        {% elif application.status == 'rejected' %}
+                        <div class="alert alert-danger border-0 shadow-sm" style="border-radius: 10px;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-times-circle fs-2 me-3 text-danger"></i>
+                                    <div>
+                                        <h5 class="alert-heading mb-2">申请未通过</h5>
+                                        <p class="mb-0">很遗憾，您的申请未通过审核。感谢您对E时代的关注，欢迎重新申请！</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <a href="{% url 'club_application' %}" class="btn btn-outline-primary">
+                                        <i class="fas fa-redo me-2"></i>重新申请
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 操作按钮 -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <button class="btn btn-outline-primary" onclick="location.reload()">
+                            <i class="fas fa-sync-alt me-2"></i>刷新状态
+                        </button>
+                        {% if application.status != 'rejected' %}
+                        <a href="{% url 'club_application' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>返回
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<style>
+.info-item {
+    padding: 0.5rem 0;
+}
+
+.info-item label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.alert {
+    border-left: 4px solid;
+}
+
+.alert-info {
+    border-left-color: #0dcaf0;
+}
+
+.alert-success {
+    border-left-color: #198754;
+}
+
+.alert-danger {
+    border-left-color: #dc3545;
+}
+
+.progress {
+    border-radius: 10px;
+}
+
+.btn {
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .info-item {
+        text-align: center;
+    }
+}
+</style>
+{% endblock %}

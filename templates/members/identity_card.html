@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}身份卡 - 会员中心{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- 用户信息头部 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <img src="{{ member.avatar }}" alt="用户头像" 
+                         class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
+                </div>
+                <div class="col">
+                    <h2 class="h3 mb-1">{{ member.user.username }}</h2>
+                    <p class="text-muted mb-0">{{ member.bio|default:"这个用户很懒，还没有填写简介" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 身份卡片网格 -->
+    <div class="row">
+        {% for card in cards %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <!-- 卡片图片容器 -->
+                <div class="card-img-top">
+                    <img src="{{ card.image }}" alt="身份卡"
+                         class="img-fluid w-100" style="max-height: 200px; object-fit: contain;">
+                </div>
+                
+                <!-- 卡片内容 -->
+                <div class="card-body">
+                    <h5 class="card-title ps-5">{{ card.title }}</h5>
+                    {% if card.identity_title %}
+                    <p class="card-text text-muted ps-5">{{ card.identity_title }}</p>
+                    {% endif %}
+                    {% if card.updated_at %}
+                    <div class="text-muted small ps-5">
+                        认证时间：{{ card.updated_at|date:"Y-m-d H:i" }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not cards %}
+    <!-- 无身份卡时显示的提示 -->
+    <div class="text-center py-5">
+        <div class="text-muted">
+            <i class="bi bi-card-text display-1 mb-3"></i>
+            <h4>暂无身份卡</h4>
+            <p class="mb-4">您可以通过认证获取身份卡</p>
+            <a href="{% url 'apply_verification' %}" 
+               class="btn btn-primary">
+                申请认证
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 添加必要的样式 -->
+<style>
+    .card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+</style>
+{% endblock %}

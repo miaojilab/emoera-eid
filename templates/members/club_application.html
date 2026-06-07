@@ -1,0 +1,481 @@
+{% extends 'base.html' %}
+
+{% block title %}社团报名{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <!-- 页面头部 -->
+            <div class="card shadow-lg border-0 mb-4" style="border-radius: 15px;">
+                <div class="card-header bg-gradient text-white text-center py-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px 15px 0 0;">
+                    <h2 class="mb-2"><i class="fas fa-users me-2"></i>E时代社团报名</h2>
+                    <span class="badge bg-light text-primary fs-6">新生加入申请</span>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- 已有申请的显示 -->
+                    {% if existing_application %}
+                    <div class="alert alert-info border-0 shadow-sm mb-4" style="border-radius: 10px;">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-info-circle fs-4 me-3 text-info"></i>
+                            <div>
+                                <h5 class="alert-heading mb-2">您已提交申请</h5>
+                                <p class="mb-2"><strong>申请状态：</strong><span class="status-text">{{ existing_application.get_status_display }}</span></p>
+                                <p class="mb-0"><strong>申请时间：</strong>{{ existing_application.created_at|date:"Y年m月d日 H:i" }}</p>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="text-end">
+                            <a href="{% url 'application_status' %}" class="btn btn-primary">
+                                <i class="fas fa-eye me-2"></i>查看申请状态
+                            </a>
+                        </div>
+                    </div>
+                    {% else %}
+                    
+                    <!-- 重新申请提示 -->
+                    {% if rejected_application %}
+                    <div class="alert alert-info border-0 shadow-sm mb-4" style="border-radius: 10px;">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-info-circle fs-4 me-3 text-info"></i>
+                            <div>
+                                <h6 class="alert-heading mb-1">重新申请</h6>
+                                <p class="mb-0">您之前的申请未通过审核（申请时间：{{ rejected_application.created_at|date:"Y年m月d日 H:i" }}），现在可以重新提交申请。</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- 申请流程 -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="progress mb-3" style="height: 6px;">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: 50%" id="progressBar"></div>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">认证检查</small>
+                                <small class="text-muted">信息填写</small>
+                                <small class="text-muted">提交完成</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 第一步：认证检查 -->
+                    <div id="step1" class="step-content">
+                        <div class="card border-0 bg-light mb-4" style="border-radius: 10px;">
+                            <div class="card-body text-center py-5">
+                                <i class="fas fa-shield-alt fs-1 text-primary mb-3"></i>
+                                <h4 class="mb-3">第一步：认证状态检查</h4>
+                                <p class="text-muted mb-4">正在验证您的外部认证状态...</p>
+                                
+                                <div id="verificationLoading" class="d-none">
+                                    <div class="spinner-border text-primary me-2" role="status"></div>
+                                    <span>检查中，请稍候...</span>
+                                </div>
+                                
+                                <div id="verificationResult" class="d-none">
+                                    <!-- 结果将在这里显示 -->
+                                </div>
+                                
+                                <button id="startCheckBtn" class="btn btn-primary btn-lg px-4">
+                                    <i class="fas fa-play me-2"></i>开始检查
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 第二步：信息填写 -->
+                    <div id="step2" class="step-content d-none">
+                        <div class="card border-0 bg-light" style="border-radius: 10px;">
+                            <div class="card-body">
+                                <h4 class="mb-4"><i class="fas fa-user-edit me-2"></i>第二步：个人信息确认</h4>
+                                
+                                <form id="applicationForm">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="realName" class="form-label">真实姓名 <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control form-control-lg" id="realName" placeholder="请输入您的真实姓名" required>
+                                            <div class="invalid-feedback">请填写真实姓名</div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="userEmail" class="form-label">平台邮箱</label>
+                                            <input type="email" class="form-control form-control-lg" id="userEmail" value="{{ user_email }}" readonly>
+                                            <div class="form-text">
+                                                如果邮箱不正确，请到 
+                                                <a href="https://account.emoera.com/profile" target="_blank" class="text-decoration-none">
+                                                    https://account.emoera.com/profile
+                                                </a> 
+                                                修改邮箱并退出重新登录此平台即可自动同步新邮箱
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between mt-4">
+                                        <button type="button" class="btn btn-outline-secondary" id="prevStepBtn">
+                                            <i class="fas fa-arrow-left me-2"></i>上一步
+                                        </button>
+                                        <button type="submit" class="btn btn-success btn-lg px-4" id="submitBtn">
+                                            <i class="fas fa-paper-plane me-2"></i>提交申请
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 第三步：提交完成 -->
+                    <div id="step3" class="step-content d-none">
+                        <div class="text-center py-5">
+                            <i class="fas fa-check-circle fs-1 text-success mb-3"></i>
+                            <h3 class="text-success mb-3">申请提交成功！</h3>
+                            <p class="text-muted mb-4">您的申请已成功提交，请等待审核。我们会通过邮件通知您审核结果。</p>
+                            <a href="{% url 'application_status' %}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-eye me-2"></i>查看申请状态
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast 通知 -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="notificationToast" class="toast" role="alert">
+        <div class="toast-header">
+            <i class="fas fa-bell text-primary me-2"></i>
+            <strong class="me-auto">通知</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="toastMessage">
+            <!-- 消息内容 -->
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentStep = 1;
+    let verificationResult = {};
+    
+    // DOM 元素
+    const progressBar = document.getElementById('progressBar');
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    const step3 = document.getElementById('step3');
+    const startCheckBtn = document.getElementById('startCheckBtn');
+    const verificationLoading = document.getElementById('verificationLoading');
+    const verificationResultDiv = document.getElementById('verificationResult');
+    const prevStepBtn = document.getElementById('prevStepBtn');
+    const applicationForm = document.getElementById('applicationForm');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    // 工具函数
+    function showToast(message, type = 'info') {
+        const toast = document.getElementById('notificationToast');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastHeader = toast.querySelector('.toast-header i');
+        
+        // 设置图标和样式
+        toastHeader.className = `fas me-2 ${
+            type === 'success' ? 'fa-check-circle text-success' : 
+            type === 'error' ? 'fa-times-circle text-danger' : 
+            type === 'warning' ? 'fa-exclamation-triangle text-warning' : 
+            'fa-bell text-primary'
+        }`;
+        
+        toastMessage.textContent = message;
+        new bootstrap.Toast(toast).show();
+    }
+    
+    function updateProgress(step) {
+        const progress = step * 50;
+        progressBar.style.width = progress + '%';
+    }
+    
+    function showStep(step) {
+        // 隐藏所有步骤
+        document.querySelectorAll('.step-content').forEach(el => el.classList.add('d-none'));
+        
+        // 显示当前步骤
+        document.getElementById(`step${step}`).classList.remove('d-none');
+        
+        // 更新进度条
+        updateProgress(step);
+        currentStep = step;
+    }
+    
+    // 获取CSRF token
+    const csrfToken = '{{ csrf_token }}';
+    
+    // 检查外部认证状态
+    async function checkExternalVerification() {
+        startCheckBtn.style.display = 'none';
+        verificationLoading.classList.remove('d-none');
+        
+        try {
+            const response = await fetch('/club/check-verification/', {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            });
+            
+            const data = await response.json();
+            verificationResult = data;
+            
+            verificationLoading.classList.add('d-none');
+            
+            if (data.success) {
+                if (data.is_not_submitted) {
+                    verificationResultDiv.innerHTML = `
+                        <div class="alert alert-warning border-0 shadow-sm">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>需要完成认证</strong><br>
+                            您需要先提交核心成员报名表。请前往 
+                            <a href="https://trust.emoera.com/schemes/3" target="_blank" class="alert-link">
+                                https://trust.emoera.com/schemes/3
+                            </a> 
+                            完成认证后再回来提交申请。
+                        </div>
+                    `;
+                    showToast('请先完成外部认证', 'warning');
+                } else if (data.is_approved) {
+                    verificationResultDiv.innerHTML = `
+                        <div class="alert alert-success border-0 shadow-sm">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>认证通过</strong><br>
+                            您的认证状态：${data.status}<br>
+                            可以继续下一步申请。
+                        </div>
+                        <button class="btn btn-primary btn-lg mt-3" onclick="nextStep()">
+                            <i class="fas fa-arrow-right me-2"></i>下一步
+                        </button>
+                    `;
+                    showToast('认证状态检查通过', 'success');
+                } else {
+                    verificationResultDiv.innerHTML = `
+                        <div class="alert alert-warning border-0 shadow-sm">
+                            <i class="fas fa-clock me-2"></i>
+                            <strong>认证审核中</strong><br>
+                            您的认证状态：${data.status}<br>
+                            请等待认证审核通过后再回来提交申请。
+                        </div>
+                        <button class="btn btn-outline-primary mt-3" onclick="location.reload()">
+                            <i class="fas fa-redo me-2"></i>重新检查
+                        </button>
+                    `;
+                    showToast('认证正在审核中，请等待', 'warning');
+                }
+            } else {
+                // 检查是否是404错误（用户未注册）
+                if (data.message && data.message.includes('404')) {
+                    verificationResultDiv.innerHTML = `
+                        <div class="alert alert-warning border-0 shadow-sm">
+                            <i class="fas fa-user-plus me-2"></i>
+                            <strong>需要注册并完成认证</strong><br>
+                            您还没有在认证系统中注册，请先前往 
+                            <a href="https://trust.emoera.com/schemes/3" target="_blank" class="alert-link">
+                                https://trust.emoera.com/schemes/3
+                            </a> 
+                            注册账号并完成核心成员认证，然后再回来提交申请。
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    首次使用需要先注册认证系统账号
+                                </small>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-primary mt-3" onclick="location.reload()">
+                            <i class="fas fa-redo me-2"></i>重新检查
+                        </button>
+                    `;
+                    showToast('请先注册并完成外部认证', 'warning');
+                } else {
+                    verificationResultDiv.innerHTML = `
+                        <div class="alert alert-danger border-0 shadow-sm">
+                            <i class="fas fa-times-circle me-2"></i>
+                            <strong>检查失败</strong><br>
+                            ${data.message || '认证检查失败'}
+                        </div>
+                        <button class="btn btn-outline-primary mt-3" onclick="location.reload()">
+                            <i class="fas fa-redo me-2"></i>重新检查
+                        </button>
+                    `;
+                    showToast(data.message || '认证检查失败', 'error');
+                }
+            }
+            
+            verificationResultDiv.classList.remove('d-none');
+        } catch (error) {
+            verificationLoading.classList.add('d-none');
+            verificationResultDiv.innerHTML = `
+                <div class="alert alert-danger border-0 shadow-sm">
+                    <i class="fas fa-times-circle me-2"></i>
+                    <strong>网络错误</strong><br>
+                    检查认证状态时发生错误，请稍后重试。
+                </div>
+                <button class="btn btn-outline-primary mt-3" onclick="location.reload()">
+                    <i class="fas fa-redo me-2"></i>重新检查
+                </button>
+            `;
+            verificationResultDiv.classList.remove('d-none');
+            showToast('检查认证状态时发生错误', 'error');
+        }
+    }
+    
+    // 下一步
+    window.nextStep = function() {
+        if (currentStep < 3) {
+            showStep(currentStep + 1);
+        }
+    }
+    
+    // 上一步
+    function prevStep() {
+        if (currentStep > 1) {
+            showStep(currentStep - 1);
+        }
+    }
+    
+    // 提交申请
+    async function submitApplication(e) {
+        e.preventDefault();
+        
+        const realName = document.getElementById('realName').value.trim();
+        if (!realName) {
+            document.getElementById('realName').classList.add('is-invalid');
+            showToast('请填写真实姓名', 'warning');
+            return;
+        }
+        
+        // 使用loading管理器显示loading状态
+        if (window.loadingManager) {
+            window.loadingManager.showLoading(submitBtn);
+        } else {
+            // 备用方案：手动设置loading状态
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>提交中...';
+        }
+        
+        try {
+            const response = await fetch('/club/submit/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    real_name: realName,
+                    external_status: verificationResult.status,
+                    external_verified: verificationResult.is_approved
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast('提交成功！', 'success');
+                showStep(3);
+            } else {
+                showToast(data.message || '提交失败', 'error');
+                // 恢复按钮状态
+                if (window.loadingManager) {
+                    window.loadingManager.hideLoading(submitBtn);
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>提交申请';
+                }
+            }
+        } catch (error) {
+            showToast('提交时发生错误', 'error');
+            // 恢复按钮状态
+            if (window.loadingManager) {
+                window.loadingManager.hideLoading(submitBtn);
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>提交申请';
+            }
+        }
+    }
+    
+    // 事件监听
+    if (startCheckBtn) {
+        startCheckBtn.addEventListener('click', checkExternalVerification);
+    }
+    if (prevStepBtn) {
+        prevStepBtn.addEventListener('click', prevStep);
+    }
+    if (applicationForm) {
+        applicationForm.addEventListener('submit', submitApplication);
+    }
+    
+    // 输入验证
+    const realNameInput = document.getElementById('realName');
+    if (realNameInput) {
+        realNameInput.addEventListener('input', function() {
+            this.classList.remove('is-invalid');
+        });
+    }
+    
+    // 如果没有现有申请，自动开始检查
+    {% if not existing_application %}
+    setTimeout(checkExternalVerification, 1000);
+    {% endif %}
+});
+</script>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<style>
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.btn {
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.alert {
+    border-left: 4px solid;
+}
+
+.alert-info {
+    border-left-color: #0dcaf0;
+}
+
+.alert-success {
+    border-left-color: #198754;
+}
+
+.alert-warning {
+    border-left-color: #ffc107;
+}
+
+.alert-danger {
+    border-left-color: #dc3545;
+}
+
+.progress {
+    border-radius: 10px;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+</style>
+{% endblock %}

@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}审核申请 - 会员中心{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0">认证申请审核</h2>
+        <div class="btn-group">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                状态筛选
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item {% if status == 'all' %}active{% endif %}" href="?status=all">全部</a></li>
+                <li><a class="dropdown-item {% if status == 'pending' %}active{% endif %}" href="?status=pending">待审核</a></li>
+                <li><a class="dropdown-item {% if status == 'approved' %}active{% endif %}" href="?status=approved">已通过</a></li>
+                <li><a class="dropdown-item {% if status == 'rejected' %}active{% endif %}" href="?status=rejected">已拒绝</a></li>
+            </ul>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="messages mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>申请人</th>
+                    <th>姓名</th>
+                    <th>学号</th>
+                    <th>认证身份</th>
+                    <th>身份类型</th>
+                    <th>申请时间</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in applications %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            {% if app.member.avatar %}
+                            <img src="{{ app.member.avatar }}" class="rounded-circle me-2" width="32" height="32">
+                            {% endif %}
+                            {{ app.member.user.username }}
+                        </div>
+                    </td>
+                    <td>{{ app.real_name }}</td>
+                    <td>{{ app.student_id }}</td>
+                    <td>{{ app.identity_title }}</td>
+                    <td>{{ app.get_identity_type_display }}</td>
+                    <td>{{ app.created_at|date:"Y-m-d H:i" }}</td>
+                    <td>
+                        <span class="badge {% if app.status == 'approved' %}bg-success{% elif app.status == 'rejected' %}bg-danger{% else %}bg-warning{% endif %}">
+                            {{ app.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal{{ app.id }}">
+                                编辑
+                            </button>
+                            {% if app.status == 'pending' %}
+                            <button type="button" class="btn btn-sm btn-success" onclick="approveApplication({{ app.id }})">通过</button>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="rejectApplication({{ app.id }})">拒绝</button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- 编辑模态框 -->
+                <div class="modal fade" id="editModal{{ app.id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">编辑申请信息</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form method="post" action="{% url 'edit_application' app.id %}">
+                                {% csrf_token %}
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">姓名</label>
+                                        <input type="text" class="form-control" name="real_name" value="{{ app.real_name }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">学号</label>
+                                        <input type="text" class="form-control" name="student_id" value="{{ app.student_id }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">认证身份</label>
+                                        <input type="text" class="form-control" name="identity_title" value="{{ app.identity_title }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">身份类型</label>
+                                        <select class="form-select" name="identity_type" required>
+                                            {% for value, label in identity_choices %}
+                                            <option value="{{ value }}" {% if app.identity_type == value %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-primary">保存更改</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function approveApplication(id) {
+    if (confirm('确定要通过这个申请吗？')) {
+        fetch(`/verify/approve/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            }
+        });
+    }
+}
+
+function rejectApplication(id) {
+    if (confirm('确定要拒绝这个申请吗？')) {
+        fetch(`/verify/reject/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            }
+        });
+    }
+}
+</script>
+{% endblock %} 

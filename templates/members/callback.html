@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="text-center">
+    <h3>正在处理登录...</h3>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 获取 CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // 从 URL hash 中获取参数
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const access_token = params.get('access_token');
+    const state = params.get('state');
+    
+    if (access_token) {
+        fetch('/api/save-token/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                access_token: access_token,
+                state: state
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success' && data.redirect_url) {
+                window.location.href = data.redirect_url;
+            } else {
+                console.error('Error:', data.message);
+                window.location.href = '/login/';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            window.location.href = '/login/';
+        });
+    } else {
+        console.error('No access token received');
+        window.location.href = '/login/';
+    }
+});
+</script>
+{% endblock %} 

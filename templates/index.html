@@ -1,0 +1,1077 @@
+{% extends 'base.html' %}
+
+{% block title %}首页 - E时代身份认证系统{% endblock %}
+
+{% block extra_css %}
+<style>
+/* 首页特殊样式 - 覆盖默认padding */
+.main-content {
+    padding: 0 !important;
+}
+
+/* 确保首页内容紧贴导航栏 */
+.hero-section {
+    margin-top: 0;
+    padding-top: 0;
+}
+
+/* 移除其他区域的顶部间距 */
+.hero-section:first-child {
+    margin-top: 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 英雄区域 -->
+<section class="hero-section">
+    <div class="hero-background">
+        <div class="hero-particles"></div>
+        <div class="hero-grid"></div>
+    </div>
+    <div class="container">
+        <div class="row align-items-center min-vh-75">
+            <div class="col-lg-6 fade-in">
+                <div class="hero-badge">
+                    <i class="fas fa-star"></i>
+                    <span>内部身份认证系统</span>
+                </div>
+                <h1 class="hero-title">
+                    社团内部身份
+                    <span class="text-gradient">认证</span>
+                </h1>
+                <p class="hero-subtitle">
+                    通过 E时代通行证 一键登录，快速完成身份认证，统一管理社团内部身份标识，参与活动报名等社团服务
+                </p>
+                <div class="hero-buttons">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'member_profile' %}" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-user-circle me-2"></i>进入会员中心
+                        </a>
+                        <a href="{% url 'identity_card' %}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-id-card me-2"></i>查看身份卡
+                        </a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-sign-in-alt me-2"></i>一键登录
+                        </a>
+                        <a href="#features" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-info-circle me-2"></i>了解更多
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <span class="stat-number">100+</span>
+                        <span class="stat-label">活跃用户</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">99.9%</span>
+                        <span class="stat-label">安全可靠</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">24/7</span>
+                        <span class="stat-label">在线服务</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 slide-in-right">
+                <div class="hero-visual">
+                    <div class="main-card">
+                        <div class="card-content">
+                            <i class="fas fa-id-card-alt"></i>
+                            <h3>E时代 ID</h3>
+                            <p>您的数字身份凭证</p>
+                        </div>
+                        <div class="card-glow"></div>
+                    </div>
+                    <div class="floating-element floating-1">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="floating-element floating-2">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="floating-element floating-3">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div class="floating-element floating-4">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 功能特色区域 -->
+<section id="features" class="features-section">
+    <div class="container">
+        <div class="section-header text-center mb-5">
+            <div class="section-badge">
+                <i class="fas fa-rocket"></i>
+                <span>核心功能</span>
+            </div>
+            <h2 class="section-title">为您提供全方位的数字身份服务</h2>
+            <p class="section-subtitle">采用先进技术，确保安全可靠，让您的数字生活更加便捷</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3 fade-in">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-id-card"></i>
+                    </div>
+                    <h3 class="feature-title">身份认证</h3>
+                    <p class="feature-description">
+                        快速验证身份信息，获取官方认证身份标识，享受专属权益
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3 fade-in">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="feature-title">安全可靠</h3>
+                    <p class="feature-description">
+                        采用先进加密技术和多重安全验证，保护您的个人信息安全
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3 fade-in">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="feature-title">社团活动</h3>
+                    <p class="feature-description">
+                        便捷参与各类社团活动，扩展社交网络，丰富校园生活
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3 fade-in">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3 class="feature-title">移动便捷</h3>
+                    <p class="feature-description">
+                        随时随地访问，支持多设备同步使用，响应式设计完美适配
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 统计数据区域 -->
+{% if user.is_authenticated %}
+<section class="stats-section">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-4 fade-in">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number">认证完成</h3>
+                        <p class="stat-label">身份验证已通过</p>
+                        <div class="stat-progress">
+                            <div class="progress-bar" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 fade-in">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number">会员等级</h3>
+                        <p class="stat-label">享受专属权益</p>
+                        <div class="stat-progress">
+                            <div class="progress-bar" style="width: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 fade-in">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number">活动参与</h3>
+                        <p class="stat-label">参与各类活动</p>
+                        <div class="stat-progress">
+                            <div class="progress-bar" style="width: 70%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- 快速操作区域 -->
+{% if user.is_authenticated %}
+<section class="quick-actions-section">
+    <div class="container">
+        <div class="section-header text-center mb-5">
+            <div class="section-badge">
+                <i class="fas fa-bolt"></i>
+                <span>快速操作</span>
+            </div>
+            <h2 class="section-title">常用功能一键直达</h2>
+            <p class="section-subtitle">高效便捷的操作体验，让您的工作更加轻松</p>
+        </div>
+        
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-3 col-sm-6 fade-in">
+                <a href="{% url 'apply_verification' %}" class="quick-action-card">
+                    <div class="quick-action-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <span class="quick-action-text">申请认证</span>
+                    <div class="quick-action-hover">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </a>
+            </div>
+            
+            <div class="col-md-3 col-sm-6 fade-in">
+                <a href="{% url 'club_application' %}" class="quick-action-card">
+                    <div class="quick-action-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <span class="quick-action-text">社团报名</span>
+                    <div class="quick-action-hover">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </a>
+            </div>
+            
+            <div class="col-md-3 col-sm-6 fade-in">
+                <a href="{% url 'member_profile' %}" class="quick-action-card">
+                    <div class="quick-action-icon">
+                        <i class="fas fa-user-edit"></i>
+                    </div>
+                    <span class="quick-action-text">编辑资料</span>
+                    <div class="quick-action-hover">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </a>
+            </div>
+            
+            <div class="col-md-3 col-sm-6 fade-in">
+                <a href="{% url 'identity_card' %}" class="quick-action-card">
+                    <div class="quick-action-icon">
+                        <i class="fas fa-id-card"></i>
+                    </div>
+                    <span class="quick-action-text">身份卡</span>
+                    <div class="quick-action-hover">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- 技术优势区域 -->
+<section class="tech-advantages-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 fade-in">
+                <div class="tech-content">
+                    <div class="tech-badge">
+                        <i class="fas fa-cog"></i>
+                        <span>技术优势</span>
+                    </div>
+                    <h2 class="tech-title">先进技术保障</h2>
+                    <p class="tech-description">
+                        采用最新的加密技术和安全协议，确保您的数据安全。支持多因素认证，
+                        实时监控异常行为，为您提供企业级的安全保障。
+                    </p>
+                    <div class="tech-features">
+                        <div class="tech-feature">
+                            <i class="fas fa-check text-success"></i>
+                            <span>端到端加密</span>
+                        </div>
+                        <div class="tech-feature">
+                            <i class="fas fa-check text-success"></i>
+                            <span>多因素认证</span>
+                        </div>
+                        <div class="tech-feature">
+                            <i class="fas fa-check text-success"></i>
+                            <span>实时安全监控</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 slide-in-right">
+                <div class="tech-visual">
+                    <div class="tech-card">
+                        <div class="tech-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div class="tech-rings">
+                            <div class="ring ring-1"></div>
+                            <div class="ring ring-2"></div>
+                            <div class="ring ring-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 页脚信息 -->
+<section class="footer-info">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-12">
+                <p class="text-muted">
+                    <i class="fas fa-heart text-danger me-1"></i>
+                    E时代身份认证系统 - 让数字生活更美好
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+/* 英雄区域样式 */
+.hero-section {
+    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+    color: white;
+    padding: 6rem 0;
+    position: relative;
+    overflow: hidden;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+}
+
+.hero-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+}
+
+.hero-particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+}
+
+.hero-grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 50px 50px;
+}
+
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 0.75rem 1.5rem;
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    margin-bottom: 2rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.hero-badge i {
+    color: #ffd700;
+}
+
+.hero-title {
+    font-size: 4rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    line-height: 1.1;
+    position: relative;
+    z-index: 2;
+}
+
+.text-gradient {
+    background: linear-gradient(45deg, #ffd700, #ffed4e, #ffd700);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease-in-out infinite;
+}
+
+@keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    margin-bottom: 2.5rem;
+    opacity: 0.9;
+    line-height: 1.7;
+    position: relative;
+    z-index: 2;
+}
+
+.hero-buttons {
+    margin-bottom: 3rem;
+    position: relative;
+    z-index: 2;
+}
+
+.btn-outline-primary {
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.btn-outline-primary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: white;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.hero-stats {
+    display: flex;
+    gap: 2rem;
+    position: relative;
+    z-index: 2;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #ffd700;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: white;
+    opacity: 0.9;
+}
+
+.hero-visual {
+    position: relative;
+    height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.main-card {
+    position: relative;
+    width: 200px;
+    height: 280px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: white;
+    animation: float 6s ease-in-out infinite;
+}
+
+.main-card i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #ffd700;
+}
+
+.main-card h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.main-card p {
+    font-size: 0.875rem;
+    opacity: 0.8;
+}
+
+.card-glow {
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, #ffd700, #ffed4e, #ffd700);
+    border-radius: 22px;
+    z-index: -1;
+    opacity: 0.3;
+    filter: blur(10px);
+}
+
+.floating-element {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    animation: float 6s ease-in-out infinite;
+}
+
+.floating-1 {
+    top: 10%;
+    right: 15%;
+    animation-delay: -1s;
+}
+
+.floating-2 {
+    bottom: 20%;
+    right: 5%;
+    animation-delay: -2s;
+}
+
+.floating-3 {
+    top: 30%;
+    left: 10%;
+    animation-delay: -3s;
+}
+
+.floating-4 {
+    bottom: 10%;
+    left: 20%;
+    animation-delay: -4s;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(5deg); }
+}
+
+/* 功能特色区域样式 */
+.features-section {
+    padding: 6rem 0;
+    background: var(--bg-white);
+    position: relative;
+}
+
+.section-header {
+    margin-bottom: 4rem;
+}
+
+.section-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 50px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+}
+
+.section-title {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.section-subtitle {
+    font-size: 1.125rem;
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+.feature-card {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: var(--bg-white);
+    border-radius: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.4s ease;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.feature-card:hover::before {
+    transform: scaleX(1);
+}
+
+.feature-card:hover {
+    transform: translateY(-12px);
+    box-shadow: var(--shadow-lg);
+}
+
+.feature-icon {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 2rem;
+    font-size: 2.5rem;
+    color: white;
+    position: relative;
+}
+
+.feature-icon::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 50%;
+    z-index: -1;
+    opacity: 0.3;
+    filter: blur(10px);
+}
+
+.feature-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.feature-description {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.feature-hover {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--primary-color);
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+}
+
+.feature-card:hover .feature-hover {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 统计数据区域样式 */
+.stats-section {
+    padding: 5rem 0;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    background: var(--bg-white);
+    padding: 2.5rem;
+    border-radius: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.stat-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-lg);
+}
+
+.stat-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--accent-color), var(--primary-color));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 2rem;
+    font-size: 2rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.stat-card .stat-number {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.stat-progress {
+    width: 100%;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 3px;
+    transition: width 1s ease;
+}
+
+/* 快速操作区域样式 */
+.quick-actions-section {
+    padding: 5rem 0;
+    background: var(--bg-white);
+}
+
+.quick-action-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2.5rem 1.5rem;
+    background: var(--bg-white);
+    border-radius: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: all 0.4s ease;
+    height: 100%;
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.quick-action-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-lg);
+    color: var(--primary-color);
+}
+
+.quick-action-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--secondary-color), var(--accent-color));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    font-size: 2rem;
+    color: white;
+    position: relative;
+}
+
+.quick-action-icon::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    background: linear-gradient(135deg, var(--secondary-color), var(--accent-color));
+    border-radius: 50%;
+    z-index: -1;
+    opacity: 0.3;
+    filter: blur(10px);
+}
+
+.quick-action-text {
+    font-weight: 600;
+    text-align: center;
+    font-size: 1.125rem;
+}
+
+.quick-action-hover {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: all 0.3s ease;
+    color: var(--primary-color);
+}
+
+.quick-action-card:hover .quick-action-hover {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* 技术优势区域样式 */
+.tech-advantages-section {
+    padding: 6rem 0;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: white;
+}
+
+.tech-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 0.75rem 1.5rem;
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    margin-bottom: 2rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.tech-badge i {
+    color: #06b6d4;
+}
+
+.tech-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+}
+
+.tech-description {
+    font-size: 1.125rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+    line-height: 1.7;
+}
+
+.tech-features {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.tech-feature {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.125rem;
+}
+
+.tech-feature i {
+    font-size: 1.25rem;
+}
+
+.tech-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+}
+
+.tech-card {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tech-icon {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: white;
+    z-index: 2;
+    position: relative;
+}
+
+.tech-rings {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.ring {
+    position: absolute;
+    border: 2px solid rgba(6, 182, 212, 0.3);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.ring-1 {
+    width: 200px;
+    height: 200px;
+    animation-delay: 0s;
+}
+
+.ring-2 {
+    width: 280px;
+    height: 280px;
+    animation-delay: 0.5s;
+}
+
+.ring-3 {
+    width: 360px;
+    height: 360px;
+    animation-delay: 1s;
+}
+
+@keyframes pulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 0;
+    }
+}
+
+/* 页脚信息样式 */
+.footer-info {
+    padding: 3rem 0;
+    background: var(--bg-light);
+    border-top: 1px solid #e5e7eb;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2.5rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.125rem;
+    }
+    
+    .hero-buttons .btn {
+        display: block;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+    
+    .hero-buttons .btn:last-child {
+        margin-bottom: 0;
+    }
+    
+    .section-title {
+        font-size: 2rem;
+    }
+    
+    .hero-stats {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .hero-visual {
+        height: 300px;
+        margin-top: 2rem;
+    }
+    
+    .main-card {
+        width: 150px;
+        height: 200px;
+    }
+    
+    .floating-element {
+        width: 60px;
+        height: 60px;
+        font-size: 1.25rem;
+    }
+    
+    .tech-title {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .hero-section {
+        padding: 3rem 0;
+    }
+    
+    .features-section,
+    .stats-section,
+    .quick-actions-section,
+    .tech-advantages-section {
+        padding: 3rem 0;
+    }
+    
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .stat-icon {
+        margin-right: 0;
+        margin-bottom: 1.5rem;
+    }
+    
+    .tech-features {
+        gap: 0.75rem;
+    }
+}
+</style>
+{% endblock %} 

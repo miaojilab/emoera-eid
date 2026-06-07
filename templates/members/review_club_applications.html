@@ -1,0 +1,372 @@
+{% extends 'base.html' %}
+
+{% block title %}社团申请审核{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- 页面头部 -->
+            <div class="card shadow-lg border-0 mb-4" style="border-radius: 15px;">
+                <div class="card-header bg-gradient text-white py-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px 15px 0 0;">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <h2 class="mb-0"><i class="fas fa-user-check me-2"></i>社团申请审核</h2>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <select class="form-select bg-white text-dark" id="statusFilter" style="width: auto;">
+                                <option value="all" {% if status == 'all' %}selected{% endif %}>全部状态</option>
+                                <option value="pending" {% if status == 'pending' %}selected{% endif %}>待审核</option>
+                                <option value="interview_sent" {% if status == 'interview_sent' %}selected{% endif %}>笔试通知已发送</option>
+                                <option value="offer_sent" {% if status == 'offer_sent' %}selected{% endif %}>录取通知已发送</option>
+                                <option value="offer_confirmed" {% if status == 'offer_confirmed' %}selected{% endif %}>Offer已确认</option>
+                                <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>已拒绝</option>
+                            </select>
+                            <button class="btn btn-light" onclick="location.reload()">
+                                <i class="fas fa-sync-alt"></i> 刷新
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- 统计信息 -->
+                    <div class="row mb-4">
+                        <div class="col-md-2 col-sm-6 mb-3">
+                            <div class="stat-card text-center">
+                                <div class="stat-icon bg-primary">
+                                    <i class="fas fa-clipboard-list text-white"></i>
+                                </div>
+                                <h4 class="stat-number">{{ total_count }}</h4>
+                                <small class="text-muted">总申请数</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-sm-6 mb-3">
+                            <div class="stat-card text-center">
+                                <div class="stat-icon bg-warning">
+                                    <i class="fas fa-clock text-white"></i>
+                                </div>
+                                <h4 class="stat-number">{{ pending_count }}</h4>
+                                <small class="text-muted">待审核</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-sm-6 mb-3">
+                            <div class="stat-card text-center">
+                                <div class="stat-icon bg-info">
+                                    <i class="fas fa-envelope text-white"></i>
+                                </div>
+                                <h4 class="stat-number">{{ interview_sent_count }}</h4>
+                                <small class="text-muted">笔试通知已发</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-sm-6 mb-3">
+                            <div class="stat-card text-center">
+                                <div class="stat-icon bg-success">
+                                    <i class="fas fa-trophy text-white"></i>
+                                </div>
+                                <h4 class="stat-number">{{ offer_sent_count }}</h4>
+                                <small class="text-muted">录取通知已发</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-sm-6 mb-3">
+                            <div class="stat-card text-center">
+                                <div class="stat-icon bg-primary">
+                                    <i class="fas fa-handshake text-white"></i>
+                                </div>
+                                <h4 class="stat-number">{{ offer_confirmed_count }}</h4>
+                                <small class="text-muted">已确认</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-sm-6 mb-3">
+                            <div class="stat-card text-center">
+                                <div class="stat-icon bg-danger">
+                                    <i class="fas fa-times text-white"></i>
+                                </div>
+                                <h4 class="stat-number">{{ rejected_count }}</h4>
+                                <small class="text-muted">已拒绝</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 申请列表 -->
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>姓名</th>
+                                    <th>用户名</th>
+                                    <th>邮箱</th>
+                                    <th>状态</th>
+                                    <th>外部认证</th>
+                                    <th>申请时间</th>
+                                    <th class="text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for app in applications %}
+                                <tr>
+                                    <td class="fw-bold">{{ app.id }}</td>
+                                    <td>{{ app.real_name }}</td>
+                                    <td>{{ app.member.user.username }}</td>
+                                    <td>{{ app.member.user.email }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if app.status == 'pending' %}warning{% elif app.status == 'interview_sent' %}info{% elif app.status == 'offer_sent' %}success{% elif app.status == 'offer_confirmed' %}primary{% elif app.status == 'rejected' %}danger{% endif %}">
+                                            {{ app.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if app.external_verified %}success{% else %}warning{% endif %}">
+                                            {% if app.external_verified %}已认证{% else %}未认证{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>{{ app.created_at|date:"m/d H:i" }}</td>
+                                    <td class="text-center">
+                                        {% if app.status == 'pending' %}
+                                        <button class="btn btn-sm btn-primary me-1" onclick="sendInterview({{ app.id }}, '{{ app.real_name }}')">
+                                            笔试通知
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="rejectApp({{ app.id }}, '{{ app.real_name }}')">
+                                            拒绝
+                                        </button>
+                                        {% elif app.status == 'interview_sent' %}
+                                        <button class="btn btn-sm btn-outline-info me-1" onclick="resendInterview({{ app.id }}, '{{ app.real_name }}')">
+                                            <i class="fas fa-redo me-1"></i>重发笔试
+                                        </button>
+                                        <button class="btn btn-sm btn-success me-1" onclick="sendOffer({{ app.id }}, '{{ app.real_name }}')">
+                                            录取通知
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="rejectApp({{ app.id }}, '{{ app.real_name }}')">
+                                            拒绝
+                                        </button>
+                                        {% elif app.status == 'offer_sent' %}
+                                        <button class="btn btn-sm btn-outline-success me-1" onclick="resendOffer({{ app.id }}, '{{ app.real_name }}')">
+                                            <i class="fas fa-redo me-1"></i>重发录取
+                                        </button>
+                                        <a href="{% url 'confirm_offer' app.offer_uuid %}" target="_blank" class="btn btn-sm btn-info">
+                                            查看Offer
+                                        </a>
+                                        {% elif app.status == 'offer_confirmed' %}
+                                        <span class="text-success">已完成</span>
+                                        {% elif app.status == 'rejected' %}
+                                        <span class="text-muted">已拒绝</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fs-2 mb-2"></i><br>
+                                        暂无申请记录
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+// 状态筛选
+document.getElementById('statusFilter').addEventListener('change', function() {
+    const status = this.value;
+    const url = new URL(window.location);
+    url.searchParams.set('status', status);
+    window.location.href = url.toString();
+});
+
+// 获取CSRF token
+const csrfToken = '{{ csrf_token }}';
+
+async function sendInterview(id, name) {
+    const result = await Swal.fire({
+        title: '发送笔试通知',
+        text: `确定要向 ${name} 发送笔试通知吗？`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: '确定发送',
+        cancelButtonText: '取消'
+    });
+    
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch(`/club/admin/interview/${id}/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken }
+            });
+            
+            if (response.ok) {
+                Swal.fire('成功', '笔试通知发送成功', 'success').then(() => location.reload());
+            } else {
+                Swal.fire('失败', '发送失败', 'error');
+            }
+        } catch (error) {
+            Swal.fire('错误', '发送时发生错误', 'error');
+        }
+    }
+}
+
+async function resendInterview(id, name) {
+    const result = await Swal.fire({
+        title: '重发笔试通知',
+        text: `确定要向 ${name} 重新发送笔试通知吗？`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '确定重发',
+        cancelButtonText: '取消',
+        html: `
+            <p>确定要向 <strong>${name}</strong> 重新发送笔试通知吗？</p>
+            <p class="text-muted small">注意：这将重新发送邮件通知</p>
+        `
+    });
+    
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch(`/club/admin/resend-interview/${id}/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken }
+            });
+            
+            if (response.ok) {
+                Swal.fire('成功', '笔试通知重发成功', 'success').then(() => location.reload());
+            } else {
+                Swal.fire('失败', '重发失败', 'error');
+            }
+        } catch (error) {
+            Swal.fire('错误', '重发时发生错误', 'error');
+        }
+    }
+}
+
+async function sendOffer(id, name) {
+    const result = await Swal.fire({
+        title: '发送录取通知',
+        text: `确定要向 ${name} 发送录取通知吗？`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: '确定发送',
+        cancelButtonText: '取消'
+    });
+    
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch(`/club/admin/offer/${id}/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken }
+            });
+            
+            if (response.ok) {
+                Swal.fire('成功', '录取通知发送成功', 'success').then(() => location.reload());
+            } else {
+                Swal.fire('失败', '发送失败', 'error');
+            }
+        } catch (error) {
+            Swal.fire('错误', '发送时发生错误', 'error');
+        }
+    }
+}
+
+async function resendOffer(id, name) {
+    const result = await Swal.fire({
+        title: '重发录取通知',
+        text: `确定要向 ${name} 重新发送录取通知吗？`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '确定重发',
+        cancelButtonText: '取消',
+        html: `
+            <p>确定要向 <strong>${name}</strong> 重新发送录取通知吗？</p>
+            <p class="text-muted small">注意：这将重新发送邮件通知</p>
+        `
+    });
+    
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch(`/club/admin/resend-offer/${id}/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken }
+            });
+            
+            if (response.ok) {
+                Swal.fire('成功', '录取通知重发成功', 'success').then(() => location.reload());
+            } else {
+                Swal.fire('失败', '重发失败', 'error');
+            }
+        } catch (error) {
+            Swal.fire('错误', '重发时发生错误', 'error');
+        }
+    }
+}
+
+async function rejectApp(id, name) {
+    const result = await Swal.fire({
+        title: '拒绝申请',
+        text: `确定要拒绝 ${name} 的申请吗？此操作不可撤销。`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '确定拒绝',
+        cancelButtonText: '取消'
+    });
+    
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch(`/club/admin/reject/${id}/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken }
+            });
+            
+            if (response.ok) {
+                Swal.fire('成功', '申请已拒绝', 'success').then(() => location.reload());
+            } else {
+                Swal.fire('失败', '操作失败', 'error');
+            }
+        } catch (error) {
+            Swal.fire('错误', '操作时发生错误', 'error');
+        }
+    }
+}
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<style>
+.stat-card {
+    padding: 1rem;
+    border-radius: 10px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.5rem;
+}
+
+.stat-number {
+    margin: 0.5rem 0;
+    font-weight: bold;
+    color: #495057;
+}
+
+.table-responsive {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}
