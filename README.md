@@ -2,6 +2,8 @@
 
 E-era Member Center Backend 是一个基于 Django 的会员中心与身份认证后端，提供 OAuth 登录、会员资料、身份认证申请、社团报名、审核与邮件通知等功能。
 
+在线地址：[https://neweid.emoera.com/](https://neweid.emoera.com/)
+
 ## 功能特性
 
 - OAuth 登录与本地用户同步
