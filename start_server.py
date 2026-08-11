@@ -96,10 +96,10 @@ def start_server():
         try:
             import gunicorn
             logger.info("使用gunicorn启动服务器...")
-            os.system("gunicorn eidProject.wsgi:application --bind 0.0.0.0:8000 --workers 3")
+            os.system("gunicorn eidProject.wsgi:application --bind 0.0.0.0:8081 --workers 3")
         except ImportError:
             logger.info("使用Django开发服务器启动...")
-            os.system("python manage.py runserver 0.0.0.0:8000")
+            os.system("python manage.py runserver 0.0.0.0:8081")
         
     except KeyboardInterrupt:
         logger.info("🛑 服务器已停止")

@@ -1,50 +1,94 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="text-center">
-    <h3>正在处理登录...</h3>
+<div class="container mt-5">
+    <div class="text-center" id="debug-area">
+        <h3>正在处理登录...</h3>
+        <div id="debug-info" class="mt-3 text-muted" style="font-size: 14px;"></div>
+    </div>
 </div>
 
 <script>
+function log(msg) {
+    console.log(msg);
+    var el = document.getElementById('debug-info');
+    el.innerHTML += '<div>' + msg + '</div>';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    // 获取 CSRF token
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    
-    // 从 URL hash 中获取参数
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    const access_token = params.get('access_token');
-    const state = params.get('state');
-    
-    if (access_token) {
-        fetch('/api/save-token/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
-            body: JSON.stringify({
-                access_token: access_token,
-                state: state
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success' && data.redirect_url) {
-                window.location.href = data.redirect_url;
-            } else {
-                console.error('Error:', data.message);
-                window.location.href = '/login/';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            window.location.href = '/login/';
-        });
-    } else {
-        console.error('No access token received');
-        window.location.href = '/login/';
+    log('1. 回调页面已加载');
+    log('完整 URL: ' + window.location.href);
+
+    // 同时检查 URL hash 和查询参数
+    var hash = window.location.hash.substring(1);
+    var search = window.location.search.substring(1);
+    log('2. URL hash: ' + (hash ? hash.substring(0, 80) + '...' : '(空)'));
+    log('3. URL query: ' + (search ? search.substring(0, 80) + '...' : '(空)'));
+
+    // 优先从 hash 取，其次从 query 取
+    var source = hash || search;
+    var params = new URLSearchParams(source);
+    var access_token = params.get('access_token');
+    var state = params.get('state');
+
+    // 如果都没有，检查是否有 code 参数（Authorization Code 模式）
+    var code = params.get('code');
+    if (!access_token && !code) {
+        log('❌ 错误: 没有收到 access_token 也没有 code');
+        setTimeout(function() { window.location.href = '/login/'; }, 3000);
+        return;
     }
+
+    if (code) {
+        log('⚠️  收到的是 authorization code，不是 access_token');
+        log('code: ' + code.substring(0, 20) + '...');
+        log('这意味着 OAuth 服务器用的是 Authorization Code 模式');
+        log('但当前代码配置的是 Implicit 模式 (response_type=token)');
+        log('❌ 需要修改 response_type 为 code');
+        setTimeout(function() { window.location.href = '/login/'; }, 5000);
+        return;
+    }
+
+    log('4. 已获取 access_token (前20位): ' + access_token.substring(0, 20) + '...');
+    log('5. state: ' + (state || '(空)'));
+
+    var csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    var csrfToken = csrfInput ? csrfInput.value : '';
+    log('5. CSRF token: ' + (csrfToken ? csrfToken.substring(0, 10) + '...' : '(空)'));
+
+    log('6. 正在调用 /api/save-token/ ...');
+
+    fetch('/api/save-token/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            access_token: access_token,
+            state: state
+        })
+    })
+    .then(function(response) {
+        log('7. 服务器响应状态码: ' + response.status);
+        return response.json();
+    })
+    .then(function(data) {
+        log('8. 服务器返回: ' + JSON.stringify(data));
+        if (data.status === 'success' && data.redirect_url) {
+            log('✅ 登录成功，跳转到: ' + data.redirect_url);
+            setTimeout(function() {
+                window.location.href = data.redirect_url;
+            }, 500);
+        } else {
+            log('❌ 登录失败: ' + (data.message || '未知错误'));
+            setTimeout(function() { window.location.href = '/login/'; }, 3000);
+        }
+    })
+    .catch(function(error) {
+        log('❌ 网络错误: ' + error.message);
+        setTimeout(function() { window.location.href = '/login/'; }, 3000);
+    });
 });
 </script>
 {% endblock %} 

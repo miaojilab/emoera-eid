@@ -53,18 +53,26 @@ def save_token(request):
         data = json.loads(request.body)
         access_token = data.get('access_token')
         state = data.get('state')
+        logger.info("save_token: access_token=%s..., state=%s", access_token[:20] if access_token else None, state)
+        logger.info("save_token: session oauth_state=%s", request.session.get('oauth_state'))
+        
         # 验证 state 防止 CSRF
         if state != request.session.get('oauth_state'):
-            logger.warning("OAuth state validation failed")
+            logger.warning("OAuth state validation failed: received=%s, expected=%s", state, request.session.get('oauth_state'))
             return JsonResponse({'status': 'error', 'message': 'Invalid state'}, status=400)
         
         if access_token:
+            logger.info("save_token: fetching user info from OAuth API")
             user_info = get_oauth_user_info(access_token)
             if user_info:
+                logger.info("save_token: user_info received, username=%s", user_info.get('username'))
                 user = create_or_update_user(user_info)
                 # 使用 Django 的默认认证后端进行登录
                 auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                logger.info("save_token: user logged in successfully, redirecting to /profile/")
                 return JsonResponse({'status': 'success', 'redirect_url': '/profile/'})
+            else:
+                logger.warning("save_token: get_oauth_user_info returned None")
             
         return JsonResponse({'status': 'error', 'message': '获取用户信息失败'}, status=400)
     except Exception as e:
@@ -494,23 +502,6 @@ def submit_club_application(request):
             'success': False,
             'message': f'提交失败: {str(e)}'
         })
-
-
-@login_required
-def application_status_page(request):
-    """申请状态页面"""
-    try:
-        member = Member.objects.get(user=request.user)
-        application = ClubApplication.objects.filter(member=member).order_by('-created_at').first()
-        
-        if not application:
-            return redirect('club_application')
-        
-        return render(request, 'members/application_status.html', {
-            'application': application
-        })
-    except Member.DoesNotExist:
-        return redirect('login')
 
 
 @permission_required('members.can_review_club_applications', raise_exception=True)
