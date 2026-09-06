@@ -103,124 +103,6 @@
     </div>
 </section>
 
-<!-- 功能特色区域 -->
-<section id="features" class="features-section">
-    <div class="container">
-        <div class="section-header text-center mb-5">
-            <div class="section-badge">
-                <i class="fas fa-rocket"></i>
-                <span>核心功能</span>
-            </div>
-            <h2 class="section-title">为您提供全方位的数字身份服务</h2>
-            <p class="section-subtitle">采用先进技术，确保安全可靠，让您的数字生活更加便捷</p>
-        </div>
-        
-        <div class="row g-4">
-            <div class="col-md-6 col-lg-3 fade-in">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-id-card"></i>
-                    </div>
-                    <h3 class="feature-title">身份认证</h3>
-                    <p class="feature-description">
-                        快速验证身份信息，获取官方认证身份标识，享受专属权益
-                    </p>
-                </div>
-            </div>
-            
-            <div class="col-md-6 col-lg-3 fade-in">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-shield-alt"></i>
-                    </div>
-                    <h3 class="feature-title">安全可靠</h3>
-                    <p class="feature-description">
-                        采用先进加密技术和多重安全验证，保护您的个人信息安全
-                    </p>
-                </div>
-            </div>
-            
-            <div class="col-md-6 col-lg-3 fade-in">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <h3 class="feature-title">社团活动</h3>
-                    <p class="feature-description">
-                        便捷参与各类社团活动，扩展社交网络，丰富校园生活
-                    </p>
-                </div>
-            </div>
-            
-            <div class="col-md-6 col-lg-3 fade-in">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-mobile-alt"></i>
-                    </div>
-                    <h3 class="feature-title">移动便捷</h3>
-                    <p class="feature-description">
-                        随时随地访问，支持多设备同步使用，响应式设计完美适配
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- 统计数据区域 -->
-{% if user.is_authenticated %}
-<section class="stats-section">
-    <div class="container">
-        <div class="row g-4">
-            <div class="col-md-4 fade-in">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h3 class="stat-number">认证完成</h3>
-                        <p class="stat-label">身份验证已通过</p>
-                        <div class="stat-progress">
-                            <div class="progress-bar" style="width: 100%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-4 fade-in">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-star"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h3 class="stat-number">会员等级</h3>
-                        <p class="stat-label">享受专属权益</p>
-                        <div class="stat-progress">
-                            <div class="progress-bar" style="width: 85%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-4 fade-in">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-calendar-check"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h3 class="stat-number">活动参与</h3>
-                        <p class="stat-label">参与各类活动</p>
-                        <div class="stat-progress">
-                            <div class="progress-bar" style="width: 70%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-{% endif %}
-
 <!-- 快速操作区域 -->
 {% if user.is_authenticated %}
 <section class="quick-actions-section">
@@ -287,6 +169,70 @@
 </section>
 {% endif %}
 
+<!-- 功能特色区域 -->
+<section id="features" class="features-section">
+    <div class="container">
+        <div class="section-header text-center mb-5">
+            <div class="section-badge">
+                <i class="fas fa-rocket"></i>
+                <span>核心功能</span>
+            </div>
+            <h2 class="section-title">为您提供全方位的数字身份服务</h2>
+            <p class="section-subtitle">采用先进技术，确保安全可靠，让您的数字生活更加便捷</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3 fade-in">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-id-card"></i>
+                    </div>
+                    <h3 class="feature-title">身份认证</h3>
+                    <p class="feature-description">
+                        快速验证身份信息，获取官方认证身份标识，享受专属权益
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3 fade-in">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="feature-title">安全可靠</h3>
+                    <p class="feature-description">
+                        采用先进加密技术和多重安全验证，保护您的个人信息安全
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3 fade-in">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="feature-title">社团活动</h3>
+                    <p class="feature-description">
+                        便捷参与各类社团活动，扩展社交网络，丰富校园生活
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3 fade-in">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3 class="feature-title">移动便捷</h3>
+                    <p class="feature-description">
+                        随时随地访问，支持多设备同步使用，响应式设计完美适配
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- 技术优势区域 -->
 <section class="tech-advantages-section">
     <div class="container">
@@ -299,21 +245,20 @@
                     </div>
                     <h2 class="tech-title">先进技术保障</h2>
                     <p class="tech-description">
-                        采用最新的加密技术和安全协议，确保您的数据安全。支持多因素认证，
-                        实时监控异常行为，为您提供企业级的安全保障。
+                        依托 E时代通行证 统一身份认证体系，基于 OAuth 2.0 标准授权协议实现单点登录；身份数据经 TLS/HTTPS 全链路加密传输，每一次认证、报名与审核操作均通过 CSRF 防护与细粒度权限校验，并留存完整操作审计记录，为您提供企业级的数据安全保障。
                     </p>
                     <div class="tech-features">
                         <div class="tech-feature">
-                            <i class="fas fa-check text-success"></i>
-                            <span>端到端加密</span>
+                            <i class="fas fa-check"></i>
+                            <span>端到端加密传输（TLS/HTTPS 全链路）</span>
                         </div>
                         <div class="tech-feature">
-                            <i class="fas fa-check text-success"></i>
-                            <span>多因素认证</span>
+                            <i class="fas fa-check"></i>
+                            <span>统一身份认证（OAuth 2.0 标准协议）</span>
                         </div>
                         <div class="tech-feature">
-                            <i class="fas fa-check text-success"></i>
-                            <span>实时安全监控</span>
+                            <i class="fas fa-check"></i>
+                            <span>细粒度权限管控（RBAC / CSRF 防护）</span>
                         </div>
                     </div>
                 </div>
@@ -353,7 +298,7 @@
 <style>
 /* 英雄区域样式 */
 .hero-section {
-    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+    background: linear-gradient(135deg, #0f0c29 0%, #362a72 50%, #24243e 100%);
     color: white;
     padding: 6rem 0;
     position: relative;
@@ -787,7 +732,7 @@
 /* 快速操作区域样式 */
 .quick-actions-section {
     padding: 5rem 0;
-    background: var(--bg-white);
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
 }
 
 .quick-action-card {
@@ -864,7 +809,7 @@
 /* 技术优势区域样式 */
 .tech-advantages-section {
     padding: 6rem 0;
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    background: linear-gradient(135deg, #3a3480 0%, #6a53c2 50%, #8a7ad9 100%);
     color: white;
 }
 
@@ -915,6 +860,7 @@
 
 .tech-feature i {
     font-size: 1.25rem;
+    color: #ffd700;
 }
 
 .tech-visual {

@@ -3,285 +3,195 @@
 {% block title %}个人资料 - 会员中心{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8 offset-md-2">
-        <div class="card">
-            <div class="card-header">
-                <h4>个人资料</h4>
-            </div>
-            <div class="card-body">
-                <div class="text-center mb-4">
-                    <img src="{{ user_info.avatar }}" alt="头像" class="rounded-circle" style="width: 120px; height: 120px;">
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <!-- 个人页头 -->
+            <div class="card shadow-lg border-0 mb-4" style="border-radius: 15px;">
+                <div class="card-header text-white py-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px 15px 0 0;">
+                    <div class="d-flex align-items-center gap-2">
+                        <h2 class="mb-0"><i class="fas fa-user-circle me-2"></i>个人资料</h2>
+                        <span class="badge bg-light text-primary ms-2 fs-6">E时代通行证</span>
+                    </div>
+                    <p class="text-white-50 mb-0 mt-1">统一管理您的数字身份信息</p>
                 </div>
-                
-                <div class="mb-3">
-                    <label class="form-label">用户名</label>
-                    <input type="text" class="form-control" value="{{ user_info.username }}" readonly>
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label">邮箱</label>
-                    <input type="email" class="form-control" value="{{ user_info.email }}" readonly>
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label">个人简介</label>
-                    <textarea class="form-control" rows="3" readonly>{{ user_info.bio }}</textarea>
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label">注册时间</label>
-                    <input type="text" class="form-control" value="{{ user_info.createdAt }}" readonly>
-                </div>
-                
-                <div class="text-center mt-4">
-                    <a href="https://account.emoera.com/" class="btn btn-primary" target="_blank">
-                        前往认证中心修改资料
-                    </a>
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <div class="avatar-wrapper">
+                                <img src="{{ user_info.avatar }}" alt="头像" class="avatar-img">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <h3 class="fw-bold mb-1">{{ user_info.username }}</h3>
+                            <p class="text-muted mb-2"><i class="fas fa-envelope me-2"></i>{{ user_info.email }}</p>
+                            <div class="profile-meta">
+                                <span><i class="fas fa-calendar-alt me-1"></i>加入于 {{ user_info.createdAt|date:"Y年m月d日" }}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
 
-<!-- 功能导航区域 -->
-<div class="row mt-5">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="mb-0">
-                    <i class="fas fa-th-large me-2"></i>
-                    系统功能导航
-                </h4>
-                <p class="text-muted mb-0">快速访问本站主要功能</p>
-            </div>
-            <div class="card-body">
-                <div class="row g-4">
-                    <!-- 身份管理 -->
-                    <div class="col-md-6 col-lg-4">
-                        <div class="function-card">
-                            <div class="function-icon">
-                                <i class="fas fa-id-card"></i>
-                            </div>
-                            <div class="function-content">
-                                <h5 class="function-title">身份管理</h5>
-                                <p class="function-description">查看和管理您的数字身份信息</p>
-                                <div class="function-actions">
-                                    <a href="{% url 'identity_card' %}" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-eye me-1"></i>查看身份卡
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 认证申请 -->
-                    <div class="col-md-6 col-lg-4">
-                        <div class="function-card">
-                            <div class="function-icon">
-                                <i class="fas fa-shield-alt"></i>
-                            </div>
-                            <div class="function-content">
-                                <h5 class="function-title">身份认证</h5>
-                                <p class="function-description">申请身份认证，提升会员等级</p>
-                                <div class="function-actions">
-                                    <a href="{% url 'apply_verification' %}" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-edit me-1"></i>申请认证
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 社团活动 -->
-                    <div class="col-md-6 col-lg-4">
-                        <div class="function-card">
-                            <div class="function-icon">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <div class="function-content">
-                                <h5 class="function-title">社团报名</h5>
-                                <p class="function-description">加入E时代核心团队</p>
-                                <div class="function-actions">
-                                    <a href="{% url 'club_application' %}" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-sign-in-alt me-1"></i>加入E时代
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 申请状态 -->
-                    <div class="col-md-6 col-lg-4">
-                        <div class="function-card">
-                            <div class="function-icon">
-                                <i class="fas fa-clipboard-list"></i>
-                            </div>
-                            <div class="function-content">
-                                <h5 class="function-title">申请状态</h5>
-                                <p class="function-description">查看您的各种申请处理进度</p>
-                                <div class="function-actions">
-                                    <a href="{% url 'application_status' %}" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-search me-1"></i>查看状态
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 审核功能 -->
-                    {% if perms.members.can_review_applications %}
-                    <div class="col-md-6 col-lg-4">
-                        <div class="function-card function-card-admin">
-                            <div class="function-icon">
-                                <i class="fas fa-clipboard-check"></i>
-                            </div>
-                            <div class="function-content">
-                                <h5 class="function-title">审核申请</h5>
-                                <p class="function-description">审核用户提交的身份认证申请</p>
-                                <div class="function-actions">
-                                    <a href="{% url 'review_applications' %}" class="btn btn-sm btn-warning">
-                                        <i class="fas fa-tasks me-1"></i>开始审核
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    <!-- 社团审核 -->
-                    {% if perms.members.can_review_club_applications %}
-                    <div class="col-md-6 col-lg-4">
-                        <div class="function-card function-card-admin">
-                            <div class="function-icon">
-                                <i class="fas fa-user-check"></i>
-                            </div>
-                            <div class="function-content">
-                                <h5 class="function-title">社团审核</h5>
-                                <p class="function-description">审核用户提交的社团报名申请</p>
-                                <div class="function-actions">
-                                    <a href="{% url 'review_club_applications' %}" class="btn btn-sm btn-warning">
-                                        <i class="fas fa-users-cog me-1"></i>开始审核
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
+            <!-- 基本资料详情 -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+                    <h4 class="mb-0"><i class="fas fa-id-badge text-primary me-2"></i>基本资料</h4>
+                    <p class="text-muted mb-0 small mt-1">以下信息由认证中心同步，如需修改请前往认证中心</p>
                 </div>
+                <div class="card-body p-4">
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-user"></i></div>
+                        <div class="info-content">
+                            <div class="info-label">用户名</div>
+                            <div class="info-value">{{ user_info.username }}</div>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-envelope"></i></div>
+                        <div class="info-content">
+                            <div class="info-label">邮箱</div>
+                            <div class="info-value">{{ user_info.email }}</div>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-align-left"></i></div>
+                        <div class="info-content">
+                            <div class="info-label">个人简介</div>
+                            <div class="info-value">{{ user_info.bio|default:"这个用户很懒，还没有填写简介" }}</div>
+                        </div>
+                    </div>
+
+                    <div class="info-row mb-0">
+                        <div class="info-icon"><i class="fas fa-calendar-alt"></i></div>
+                        <div class="info-content">
+                            <div class="info-label">注册时间</div>
+                            <div class="info-value">{{ user_info.createdAt|date:"Y年m月d日 H:i" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="d-flex justify-content-center gap-3 mt-4 flex-wrap">
+                <a href="https://account.emoera.com/" class="btn btn-primary btn-lg px-4" target="_blank">
+                    <i class="fas fa-user-edit me-2"></i>前往认证中心修改资料
+                </a>
+                <a href="{% url 'identity_card' %}" class="btn btn-outline-primary btn-lg px-4">
+                    <i class="fas fa-id-card me-2"></i>查看身份卡
+                </a>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-.function-card {
-    background: var(--bg-white);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 1rem;
-    padding: 1.5rem;
-    height: 100%;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.function-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    transform: scaleX(0);
-    transition: transform 0.3s ease;
-}
-
-.function-card:hover::before {
-    transform: scaleX(1);
-}
-
-.function-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-md);
-    border-color: var(--primary-color);
-}
-
-.function-card-admin::before {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-}
-
-.function-card-admin:hover {
-    border-color: #f59e0b;
-}
-
-.function-icon {
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+/* 头像光环 */
+.avatar-wrapper {
+    width: 140px;
+    height: 140px;
     border-radius: 50%;
+    padding: 5px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.avatar-wrapper:hover {
+    transform: scale(1.05);
+    box-shadow: 0 12px 32px rgba(99, 102, 241, 0.45);
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 4px solid #fff;
+    display: block;
+}
+
+.profile-meta {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* 信息行 */
+.info-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    padding: 1.25rem 1rem;
+    border-radius: 0.75rem;
+    transition: background 0.3s ease, transform 0.3s ease;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-row:hover {
+    background: var(--bg-light);
+    transform: translateX(4px);
+}
+
+.info-icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    font-size: 1.15rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 1rem;
-    font-size: 1.5rem;
-    color: white;
+    box-shadow: var(--shadow-sm);
 }
 
-.function-card-admin .function-icon {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-}
-
-.function-title {
-    font-size: 1.125rem;
+.info-label {
+    font-size: 0.8rem;
     font-weight: 600;
-    margin-bottom: 0.5rem;
-    color: var(--text-primary);
-}
-
-.function-description {
     color: var(--text-secondary);
-    font-size: 0.875rem;
-    line-height: 1.5;
-    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
 }
 
-.function-actions {
-    display: flex;
-    gap: 0.5rem;
+.info-value {
+    font-size: 1.05rem;
+    color: var(--text-primary);
+    word-break: break-all;
 }
 
-.btn-sm {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
+/* 按钮过渡 */
+.btn {
+    transition: all 0.3s ease;
 }
 
-.btn-warning {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    border: none;
-    color: white;
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
-.btn-warning:hover {
-    background: linear-gradient(135deg, #d97706, #b45309);
-    color: white;
-    transform: translateY(-1px);
-}
-
-@media (max-width: 768px) {
-    .function-card {
-        padding: 1rem;
+/* 响应式 */
+@media (max-width: 576px) {
+    .avatar-wrapper {
+        width: 100px;
+        height: 100px;
     }
-    
-    .function-actions {
+
+    .d-flex.justify-content-center.gap-3 {
         flex-direction: column;
+        align-items: stretch;
     }
-    
-    .btn-sm {
+
+    .d-flex.justify-content-center.gap-3 .btn {
         width: 100%;
-        text-align: center;
     }
 }
 </style>
-{% endblock %} 
+{% endblock %}
