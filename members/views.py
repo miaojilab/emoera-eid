@@ -22,6 +22,7 @@ import string
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
+from .notify import notify_club_event, notify_verification_event
 
 logger = logging.getLogger(__name__)
 
@@ -190,6 +191,14 @@ def apply_verification(request):
             identity_title=request.POST.get('identity_title'),
             identity_type=request.POST.get('identity_type')
         )
+
+        notify_verification_event(
+            event='新身份认证申请',
+            application_id=application.id,
+            username=request.user.username,
+            identity_type=application.get_identity_type_display(),
+            status=application.status,
+        )
         
         messages.success(request, '申请提交成功，请等待审核。')
         return redirect('apply_verification')
@@ -253,6 +262,14 @@ def approve_application(request, application_id):
         member.identity_level = identity_levels.get(application.identity_type, 0)
         member.identity_title = application.identity_title
         member.save()
+
+        notify_verification_event(
+            event='身份认证已通过',
+            application_id=application.id,
+            username=application.member.user.username,
+            identity_type=application.get_identity_type_display(),
+            status=application.status,
+        )
         
         messages.success(request, '已通过申请')
     return redirect('review_applications')
@@ -264,6 +281,14 @@ def reject_application(request, application_id):
         application = get_object_or_404(VerificationApplication, id=application_id)
         application.status = 'rejected'
         application.save()
+
+        notify_verification_event(
+            event='身份认证已拒绝',
+            application_id=application.id,
+            username=application.member.user.username,
+            identity_type=application.get_identity_type_display(),
+            status=application.status,
+        )
         messages.success(request, '已拒绝申请')
     return redirect('review_applications') 
 
@@ -478,6 +503,13 @@ def submit_club_application(request):
             external_verification_status=data.get('external_status', ''),
             external_verified=data.get('external_verified', False)
         )
+
+        notify_club_event(
+            event='新社团报名申请',
+            application_id=application.id,
+            username=request.user.username,
+            status=application.status,
+        )
         
         return JsonResponse({
             'success': True,
@@ -559,6 +591,13 @@ def send_interview_notification(request, application_id):
         
         # 发送笔试通知邮件
         send_interview_email(application.member.user.email, application.real_name)
+
+        notify_club_event(
+            event='已发送笔试通知',
+            application_id=application.id,
+            username=application.member.user.username,
+            status=application.status,
+        )
         
         messages.success(request, f'已向 {application.real_name} 发送笔试通知')
     
@@ -600,6 +639,13 @@ def send_offer_notification(request, application_id):
         
         # 发送录取通知邮件
         send_offer_email(application.member.user.email, application.real_name, str(application.offer_uuid))
+
+        notify_club_event(
+            event='已发送录取通知',
+            application_id=application.id,
+            username=application.member.user.username,
+            status=application.status,
+        )
         
         messages.success(request, f'已向 {application.real_name} 发送录取通知')
     
@@ -639,6 +685,12 @@ def confirm_offer(request, offer_uuid):
                 application.status = 'offer_confirmed'
                 application.offer_confirmed_at = timezone.now()
                 application.save()
+                notify_club_event(
+                    event='Offer 已确认',
+                    application_id=application.id,
+                    username=application.member.user.username,
+                    status=application.status,
+                )
                 return JsonResponse({'status': 'success'})
             else:
                 return JsonResponse({'status': 'already_confirmed'})
@@ -754,6 +806,12 @@ def reject_club_application(request, application_id):
         application = get_object_or_404(ClubApplication, id=application_id)
         application.status = 'rejected'
         application.save()
+        notify_club_event(
+            event='社团申请已拒绝',
+            application_id=application.id,
+            username=application.member.user.username,
+            status=application.status,
+        )
         messages.success(request, f'已拒绝 {application.real_name} 的申请')
     
     return redirect('review_club_applications') 

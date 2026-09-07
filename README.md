@@ -11,6 +11,7 @@ E-era Member Center Backend 是一个基于 Django 的会员中心与身份认�
 - 身份认证申请、审核、通过与拒绝
 - 社团报名申请与审核流转
 - 笔试通知、Offer 通知与 Offer 确认
+- 可选的企业微信 / 飞书群机器人通知（认证申请、社团报名及关键状态变更）
 - Django Admin 后台管理
 - MySQL 数据库存储
 
@@ -73,7 +74,13 @@ cp .env.example .env
 
 如果需要发送邮件，还需要配置 `EMAIL_*` 相关变量。
 
-> 不要提交 `.env` 或任何包含真实密钥、数据库密码、OAuth client secret、SMTP 密码的文件。
+如果需要群机器人通知，可配置：
+
+- `WECOM_WEBHOOK_URL`
+- `FEISHU_WEBHOOK_URL`
+- `NOTIFY_WEBHOOK_URLS`（可选，逗号分隔多个 webhook）
+
+> 不要提交 `.env` 或任何包含真实密钥、数据库密码、OAuth client secret、SMTP 密码、群机器人 webhook 的文件。通知消息仅包含事件类型、申请 ID 和用户名，不包含真实姓名、学号等敏感字段。
 
 ### 4. 初始化数据库
 

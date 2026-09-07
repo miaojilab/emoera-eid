@@ -232,3 +232,9 @@ SERVER_EMAIL = os.getenv('SERVER_EMAIL', DEFAULT_FROM_EMAIL)
 
 # 邮件发送超时设置
 EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '60'))
+
+# Group robot webhooks (optional). Leave empty to disable.
+# Never commit real webhook URLs or keys.
+WECOM_WEBHOOK_URL = os.getenv('WECOM_WEBHOOK_URL', '')
+FEISHU_WEBHOOK_URL = os.getenv('FEISHU_WEBHOOK_URL', '')
+NOTIFY_WEBHOOK_URLS = os.getenv('NOTIFY_WEBHOOK_URLS', '')
