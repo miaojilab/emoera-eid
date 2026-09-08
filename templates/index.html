@@ -1,6 +1,12 @@
 {% extends 'base.html' %}
 
-{% block title %}首页 - E时代身份认证系统{% endblock %}
+{% block title %}首页 - E时代身份认证系统
+<style>
+:root{--primary-color:#176b8c;--primary-dark:#0e4b68;--secondary-color:#237d91;--accent-color:#e9b766;--bg-light:#f2f7f8}
+.navbar{background:#f8fbfc!important;box-shadow:0 1px 0 #dce8ec!important;padding:.85rem 0}.navbar-brand,.navbar-brand:hover{color:#10334a!important}.navbar-nav .nav-link{color:#416273!important}.navbar-nav .nav-link:hover,.navbar-nav .nav-link.active{color:#0b6988!important;background:#e8f2f4}
+.hero-section{background:radial-gradient(circle at 72% 30%,#164b67 0,#0c2b45 46%,#071c31 100%);padding:5rem 0 6rem;min-height:calc(100vh - 72px)}.hero-particles{background-image:radial-gradient(circle at 75% 30%,rgba(78,205,218,.25),transparent 38%),radial-gradient(circle at 18% 80%,rgba(233,183,102,.15),transparent 40%)}.hero-grid{opacity:.45;background-size:44px 44px}.hero-badge{background:rgba(255,255,255,.08);border-color:rgba(173,226,235,.25);color:#bcecf0}.hero-badge i{color:#e9b766}.hero-title{font-size:clamp(3rem,5vw,5rem);letter-spacing:-.04em}.text-gradient{background:linear-gradient(90deg,#78e2e4,#e9b766);background-clip:text}.hero-subtitle{color:#b4ced8;max-width:550px}.btn-primary{background:#e9b766!important;color:#102b40!important}.btn-outline-primary{border-color:rgba(190,230,234,.4);color:#d7f4f1}.hero-stats{gap:2.5rem}.stat-number{color:#e9b766}.hero-visual{height:530px}.main-card{background:transparent!important;border:0!important;width:380px;height:470px;box-shadow:none!important}.main-card img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 25px 35px rgba(0,0,0,.45));animation:eidFloat 7s ease-in-out infinite}.card-glow{display:none}.floating-element{background:rgba(130,220,225,.1);border-color:rgba(170,232,234,.3);color:#bdeff0}.features-section,.quick-actions-section,.tech-advantages-section{background:#f2f7f8}.feature-card{border:1px solid #dce9ec;box-shadow:0 12px 30px rgba(15,62,82,.07)}.section-badge,.tech-badge{color:#176b8c;background:#e5f1f2}.section-title,.tech-title{color:#123a50}.feature-icon,.quick-action-icon{background:#e5f1f2;color:#176b8c}@keyframes eidFloat{50%{transform:translateY(-12px) rotate(1.5deg)}}@media(max-width:768px){.hero-section{padding:3rem 0}.hero-visual{height:340px}.main-card{width:250px;height:320px}.hero-title{font-size:2.7rem}}@media(prefers-reduced-motion:reduce){.main-card img{animation:none}}
+</style>
+{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -77,14 +83,7 @@
             </div>
             <div class="col-lg-6 slide-in-right">
                 <div class="hero-visual">
-                    <div class="main-card">
-                        <div class="card-content">
-                            <i class="fas fa-id-card-alt"></i>
-                            <h3>E时代 ID</h3>
-                            <p>您的数字身份凭证</p>
-                        </div>
-                        <div class="card-glow"></div>
-                    </div>
+                    <div class="main-card"><img src="{% static 'images/eid-card.png' %}" alt="E时代三维身份卡模型"><div class="card-glow"></div></div>
                     <div class="floating-element floating-1">
                         <i class="fas fa-shield-alt"></i>
                     </div>
