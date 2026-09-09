@@ -10,9 +10,14 @@
               rel="stylesheet">
         <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.0.0/css/all.min.css"
               rel="stylesheet">
-        <link href="{% static 'css/eid.css' %}?v=20260909" rel="stylesheet">
+        <link href="{% static 'css/eid.css' %}?v=20260909-loading" rel="stylesheet">
     </head>
     <body class="eid-app page-{{ request.resolver_match.url_name|default:'index' }}">
+        <div id="page-progress" class="page-progress" aria-hidden="true" hidden><span></span></div>
+        <div id="page-loading-status" class="page-loading-status" role="status" aria-live="polite" aria-atomic="true" hidden>
+            <span class="page-loading-spinner" aria-hidden="true"></span>
+            <span id="page-loading-message"></span>
+        </div>
         <a class="skip-link" href="#main-content">跳到主要内容</a>
         <header class="site-header">
             <nav class="eid-nav container" aria-label="主导航">
@@ -65,7 +70,7 @@
             <span><b>E时代 ID</b> · 连接每一份热爱</span><span>身份认证 / 社团报名 / 成员服务</span><a href="https://account.emoera.com/">E时代通行证 ↗</a>
         </footer>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="{% static 'js/eid-ui.js' %}"></script>
+        <script src="{% static 'js/eid-ui.js' %}?v=20260909-loading"></script>
         {% block extra_js %}{% endblock %}
     </body>
 </html>

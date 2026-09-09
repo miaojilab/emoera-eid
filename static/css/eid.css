@@ -1437,3 +1437,162 @@ h5 {
 .review-workspace .table-responsive {
   overscroll-behavior-x: contain;
 }
+
+/* Indeterminate navigation feedback; no simulated completion percentage. */
+.page-progress[hidden],
+.page-loading-status[hidden] {
+  display: none !important;
+}
+.page-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  height: 3px;
+  z-index: 1200;
+  overflow: hidden;
+  background: #1754ed14;
+  pointer-events: none;
+}
+.page-progress span {
+  display: block;
+  height: 100%;
+  width: 38%;
+  border-radius: 0 4px 4px 0;
+  background: #1754ed;
+  box-shadow: 0 0 10px #1754ed55;
+  animation: page-travel 1.3s ease-in-out infinite;
+}
+.page-loading-status {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 40px);
+  padding: 14px 18px;
+  color: #252c39;
+  background: #fff;
+  border: 1px solid #dfe5f0;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px #14223b16;
+  font-size: 13px;
+  pointer-events: none;
+}
+.page-loading-spinner,
+.is-page-loading::after {
+  width: 17px;
+  height: 17px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: page-spin 0.75s linear infinite;
+}
+.page-loading-spinner {
+  flex-shrink: 0;
+  color: #1754ed;
+}
+.is-page-loading {
+  position: relative;
+  cursor: progress;
+}
+.is-page-loading:not(.service-card):not(.brand) {
+  color: transparent !important;
+}
+.is-page-loading:not(.service-card):not(.brand) > * {
+  opacity: 0;
+}
+.is-page-loading::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - 8.5px);
+  top: calc(50% - 8.5px);
+  color: #1754ed;
+}
+.btn-primary.is-page-loading::after,
+.btn-success.is-page-loading::after,
+.nav-account.is-page-loading::after {
+  color: #fff;
+}
+.service-card.is-page-loading {
+  border-color: #1754ed;
+  background: #f8faff;
+}
+.service-card.is-page-loading::after {
+  top: 26px;
+  left: auto;
+  right: 26px;
+}
+.service-card.is-page-loading .service-top > span {
+  visibility: hidden;
+}
+.brand.is-page-loading::after {
+  display: none;
+}
+.brand.is-page-loading img {
+  animation: page-breathe 1.2s ease-in-out infinite;
+}
+@keyframes page-travel {
+  from {
+    transform: translateX(-105%);
+  }
+  to {
+    transform: translateX(370%);
+  }
+}
+@keyframes page-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes page-breathe {
+  50% {
+    opacity: 0.5;
+  }
+}
+@media (max-width: 640px) {
+  .page-loading-status {
+    left: 20px;
+    right: 20px;
+    bottom: max(20px, env(safe-area-inset-bottom));
+    justify-content: center;
+    font-size: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-progress span {
+    width: 100%;
+    opacity: 0.6;
+  }
+  .page-loading-spinner,
+  .is-page-loading::after {
+    border-style: dotted;
+    border-right-color: currentColor;
+  }
+}
+/* Keep navigation destinations readable while their adjacent spinner runs. */
+.eid-menu .is-page-loading:not(.nav-account),
+.nav-dropdown-menu .is-page-loading {
+  color: #1754ed !important;
+}
+.eid-menu .is-page-loading:not(.nav-account) > *,
+.nav-dropdown-menu .is-page-loading > * {
+  opacity: 1;
+}
+.eid-menu .is-page-loading:not(.nav-account)::after {
+  left: auto;
+  right: -16px;
+  top: calc(50% - 6px);
+  width: 12px;
+  height: 12px;
+  border-width: 1.5px;
+}
+.nav-dropdown-menu .is-page-loading::after {
+  left: auto;
+  right: 10px;
+}
+@media (max-width: 900px) {
+  .eid-menu .is-page-loading:not(.nav-account)::after {
+    right: 12px;
+  }
+}

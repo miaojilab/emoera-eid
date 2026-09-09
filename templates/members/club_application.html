@@ -138,7 +138,7 @@
                                 </div>
                                 <!-- 操作按钮 -->
                                 <div class="d-flex justify-content-between mt-4">
-                                    <button class="btn btn-outline-primary" onclick="location.reload()">
+                                    <button class="btn btn-outline-primary" data-page-loading="正在刷新页面" data-page-reload>
                                         <i class="fas fa-sync-alt me-2" aria-hidden="true"></i>刷新状态
                                     </button>
                                     <span class="text-muted">审核结果将通过邮件通知您</span>
@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             您的认证状态：${data.status}<br>
                             请等待认证审核通过后再回来提交申请。
                         </div>
-                        <button class="btn btn-outline-primary mt-3" onclick="location.reload()">
+                        <button class="btn btn-outline-primary mt-3" data-page-loading="正在刷新页面" data-page-reload>
                             <i class="fas fa-redo me-2" aria-hidden="true"></i>重新检查
                         </button>
                     `;
@@ -410,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </small>
                             </div>
                         </div>
-                        <button class="btn btn-outline-primary mt-3" onclick="location.reload()">
+                        <button class="btn btn-outline-primary mt-3" data-page-loading="正在刷新页面" data-page-reload>
                             <i class="fas fa-redo me-2" aria-hidden="true"></i>重新检查
                         </button>
                     `;
@@ -422,7 +422,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <strong>检查失败</strong><br>
                             ${data.message || '认证检查失败'}
                         </div>
-                        <button class="btn btn-outline-primary mt-3" onclick="location.reload()">
+                        <button class="btn btn-outline-primary mt-3" data-page-loading="正在刷新页面" data-page-reload>
                             <i class="fas fa-redo me-2" aria-hidden="true"></i>重新检查
                         </button>
                     `;
@@ -439,7 +439,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <strong>网络错误</strong><br>
                     检查认证状态时发生错误，请稍后重试。
                 </div>
-                <button class="btn btn-outline-primary mt-3" onclick="location.reload()">
+                <button class="btn btn-outline-primary mt-3" data-page-loading="正在刷新页面" data-page-reload>
                     <i class="fas fa-redo me-2" aria-hidden="true"></i>重新检查
                 </button>
             `;

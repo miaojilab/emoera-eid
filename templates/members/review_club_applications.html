@@ -25,7 +25,7 @@
                                     <option value="rejected"
                                             {% if status == 'rejected' %}selected{% endif %}>已拒绝</option>
                                 </select>
-                                <button class="btn btn-light" onclick="location.reload()">
+                                <button class="btn btn-light" data-page-loading="正在刷新页面" data-page-reload>
                                     <i class="fas fa-sync-alt" aria-hidden="true"></i> 刷新
                                 </button>
                             </div>
