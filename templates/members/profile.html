@@ -1,197 +1,52 @@
-{% extends 'base.html' %}
-
-{% block title %}个人资料 - 会员中心{% endblock %}
-
+{% extends "base.html" %}
+{% block title %}个人中心 · E时代 ID{% endblock %}
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8 col-md-10">
-            <!-- 个人页头 -->
-            <div class="card shadow-lg border-0 mb-4" style="border-radius: 15px;">
-                <div class="card-header text-white py-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px 15px 0 0;">
-                    <div class="d-flex align-items-center gap-2">
-                        <h2 class="mb-0"><i class="fas fa-user-circle me-2"></i>个人资料</h2>
-                        <span class="badge bg-light text-primary ms-2 fs-6">E时代通行证</span>
+    <div class="container">
+        <div class="page-heading"><div><p class="eyebrow">YOUR SPACE</p><h1>个人中心</h1><p>你的资料、身份与社团服务，集中在这里。</p></div><a class="btn btn-outline-primary" href="{% url 'identity_card' %}">查看我的身份卡 <span aria-hidden="true">↗</span></a></div>
+        <div class="profile-layout">
+            <aside class="card profile-summary">{% if user_info.avatar %}<img class="avatar-img"
+     src="{{ user_info.avatar }}"
+     alt="{{ user_info.username }} 的头像">{% else %}<div class="avatar-fallback" aria-hidden="true">{{ user_info.username|first|upper }}</div>{% endif %}<h2>{{ user_info.username }}</h2><p>{{ user_info.email|default:'暂未设置邮箱' }}</p><span class="badge bg-primary">E时代通行证</span><a href="https://account.emoera.com/"
+   target="_blank"
+   rel="noopener"
+   class="btn btn-outline-secondary">管理通行证资料 ↗</a></aside>
+            <div>
+                <section class="card">
+                    <div class="card-header">
+                        <h2 class="h5 mb-1">基本资料</h2>
+                        <p class="mb-0 small">资料由 E时代通行证同步，修改请前往通行证。</p>
                     </div>
-                    <p class="text-white-50 mb-0 mt-1">统一管理您的数字身份信息</p>
-                </div>
-                <div class="card-body p-4">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            <div class="avatar-wrapper">
-                                <img src="{{ user_info.avatar }}" alt="头像" class="avatar-img">
+                    <div class="card-body">
+                        <dl class="info-list">
+                            <div>
+                                <dt>用户名</dt>
+                                <dd>
+                                    {{ user_info.username }}
+                                </dd>
                             </div>
-                        </div>
-                        <div class="col">
-                            <h3 class="fw-bold mb-1">{{ user_info.username }}</h3>
-                            <p class="text-muted mb-2"><i class="fas fa-envelope me-2"></i>{{ user_info.email }}</p>
-                            <div class="profile-meta">
-                                <span><i class="fas fa-calendar-alt me-1"></i>加入于 {{ user_info.createdAt|date:"Y年m月d日" }}</span>
+                            <div>
+                                <dt>邮箱</dt>
+                                <dd>
+                                    {{ user_info.email|default:'暂未设置' }}
+                                </dd>
                             </div>
-                        </div>
+                            <div>
+                                <dt>个人简介</dt>
+                                <dd>
+                                    {{ user_info.bio|default:'还没有填写个人简介。' }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>注册时间</dt>
+                                <dd>
+                                    {{ user_info.createdAt|date:'Y年m月d日'|default:'暂未记录' }}
+                                </dd>
+                            </div>
+                        </dl>
                     </div>
-                </div>
-            </div>
-
-            <!-- 基本资料详情 -->
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
-                    <h4 class="mb-0"><i class="fas fa-id-badge text-primary me-2"></i>基本资料</h4>
-                    <p class="text-muted mb-0 small mt-1">以下信息由认证中心同步，如需修改请前往认证中心</p>
-                </div>
-                <div class="card-body p-4">
-                    <div class="info-row">
-                        <div class="info-icon"><i class="fas fa-user"></i></div>
-                        <div class="info-content">
-                            <div class="info-label">用户名</div>
-                            <div class="info-value">{{ user_info.username }}</div>
-                        </div>
-                    </div>
-
-                    <div class="info-row">
-                        <div class="info-icon"><i class="fas fa-envelope"></i></div>
-                        <div class="info-content">
-                            <div class="info-label">邮箱</div>
-                            <div class="info-value">{{ user_info.email }}</div>
-                        </div>
-                    </div>
-
-                    <div class="info-row">
-                        <div class="info-icon"><i class="fas fa-align-left"></i></div>
-                        <div class="info-content">
-                            <div class="info-label">个人简介</div>
-                            <div class="info-value">{{ user_info.bio|default:"这个用户很懒，还没有填写简介" }}</div>
-                        </div>
-                    </div>
-
-                    <div class="info-row mb-0">
-                        <div class="info-icon"><i class="fas fa-calendar-alt"></i></div>
-                        <div class="info-content">
-                            <div class="info-label">注册时间</div>
-                            <div class="info-value">{{ user_info.createdAt|date:"Y年m月d日 H:i" }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 操作按钮 -->
-            <div class="d-flex justify-content-center gap-3 mt-4 flex-wrap">
-                <a href="https://account.emoera.com/" class="btn btn-primary btn-lg px-4" target="_blank">
-                    <i class="fas fa-user-edit me-2"></i>前往认证中心修改资料
-                </a>
-                <a href="{% url 'identity_card' %}" class="btn btn-outline-primary btn-lg px-4">
-                    <i class="fas fa-id-card me-2"></i>查看身份卡
-                </a>
+                </section>
+                <div class="profile-services"><a href="{% url 'apply_verification' %}"><i class="far fa-id-card" aria-hidden="true"></i><div><h3>身份卡申请与记录 ↗</h3><p>提交新申请，查看身份审核结果。</p></div></a><a href="{% url 'club_application' %}"><i class="fas fa-users" aria-hidden="true"></i><div><h3>社团报名与进度 ↗</h3><p>查看报名、笔试和录取通知。</p></div></a></div>
             </div>
         </div>
     </div>
-</div>
-
-<style>
-/* 头像光环 */
-.avatar-wrapper {
-    width: 140px;
-    height: 140px;
-    border-radius: 50%;
-    padding: 5px;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.avatar-wrapper:hover {
-    transform: scale(1.05);
-    box-shadow: 0 12px 32px rgba(99, 102, 241, 0.45);
-}
-
-.avatar-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
-    border: 4px solid #fff;
-    display: block;
-}
-
-.profile-meta {
-    color: var(--text-secondary);
-    font-size: 0.875rem;
-}
-
-/* 信息行 */
-.info-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 1.25rem;
-    padding: 1.25rem 1rem;
-    border-radius: 0.75rem;
-    transition: background 0.3s ease, transform 0.3s ease;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.info-row:last-child {
-    border-bottom: none;
-}
-
-.info-row:hover {
-    background: var(--bg-light);
-    transform: translateX(4px);
-}
-
-.info-icon {
-    width: 48px;
-    height: 48px;
-    flex-shrink: 0;
-    border-radius: 14px;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: white;
-    font-size: 1.15rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: var(--shadow-sm);
-}
-
-.info-label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 0.25rem;
-}
-
-.info-value {
-    font-size: 1.05rem;
-    color: var(--text-primary);
-    word-break: break-all;
-}
-
-/* 按钮过渡 */
-.btn {
-    transition: all 0.3s ease;
-}
-
-.btn:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-}
-
-/* 响应式 */
-@media (max-width: 576px) {
-    .avatar-wrapper {
-        width: 100px;
-        height: 100px;
-    }
-
-    .d-flex.justify-content-center.gap-3 {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .d-flex.justify-content-center.gap-3 .btn {
-        width: 100%;
-    }
-}
-</style>
 {% endblock %}

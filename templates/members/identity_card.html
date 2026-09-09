@@ -1,79 +1,9 @@
-{% extends 'base.html' %}
-{% load static %}
-
-{% block title %}身份卡 - 会员中心{% endblock %}
-
+{% extends "base.html" %}
+{% block title %}我的身份卡 · E时代 ID{% endblock %}
 {% block content %}
-<div class="container">
-    <!-- 用户信息头部 -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="row align-items-center">
-                <div class="col-auto">
-                    <img src="{{ member.avatar }}" alt="用户头像" 
-                         class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
-                </div>
-                <div class="col">
-                    <h2 class="h3 mb-1">{{ member.user.username }}</h2>
-                    <p class="text-muted mb-0">{{ member.bio|default:"这个用户很懒，还没有填写简介" }}</p>
-                </div>
-            </div>
-        </div>
+    <div class="container">
+        <div class="page-heading"><div><p class="eyebrow">IDENTITY COLLECTION</p><h1>我的身份卡</h1><p>{{ member.user.username }}，这里记录着你在 E时代的每一份身份。</p></div><a class="btn btn-primary" href="{% url 'apply_verification' %}"><i class="fas fa-plus" aria-hidden="true"></i> 申请身份卡</a></div>
+        <div class="identity-grid">{% for card in cards %}<article class="identity-item"><div class="identity-image"><img src="{{ card.image }}" alt="{{ card.title }}身份卡" loading="lazy"></div><div class="identity-body"><div class="identity-top"><h2>{{ card.title }}</h2>{% if card.level %}<span class="badge bg-success">已认证</span>{% else %}<span class="badge bg-warning">尚未认证</span>{% endif %}</div><p>{{ card.identity_title|default:'提交身份申请，审核通过后即可获得认证身份卡。' }}</p><div class="identity-meta">{% if card.updated_at %}认证更新于 {{ card.updated_at|date:'Y年m月d日' }}{% else %}<a href="{% url 'apply_verification' %}">开始身份认证 →</a>{% endif %}</div></div></article>{% empty %}<div class="empty-state"><i class="far fa-id-card" aria-hidden="true"></i><h3>从第一张身份卡开始</h3><p>提交身份信息，审核通过后，你的身份卡会显示在这里。</p><a class="btn btn-primary" href="{% url 'apply_verification' %}">申请身份卡</a></div>{% endfor %}</div>
+        <div class="collection-note"><i class="fas fa-info-circle" aria-hidden="true"></i><div>身份卡根据已通过的申请生成。<a href="{% url 'apply_verification' %}">查看申请记录</a>，了解正在审核的身份。</div></div>
     </div>
-
-    <!-- 身份卡片网格 -->
-    <div class="row">
-        {% for card in cards %}
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <!-- 卡片图片容器 -->
-                <div class="card-img-top">
-                    <img src="{{ card.image }}" alt="身份卡"
-                         class="img-fluid w-100" style="max-height: 200px; object-fit: contain;">
-                </div>
-                
-                <!-- 卡片内容 -->
-                <div class="card-body">
-                    <h5 class="card-title ps-5">{{ card.title }}</h5>
-                    {% if card.identity_title %}
-                    <p class="card-text text-muted ps-5">{{ card.identity_title }}</p>
-                    {% endif %}
-                    {% if card.updated_at %}
-                    <div class="text-muted small ps-5">
-                        认证时间：{{ card.updated_at|date:"Y-m-d H:i" }}
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-
-    {% if not cards %}
-    <!-- 无身份卡时显示的提示 -->
-    <div class="text-center py-5">
-        <div class="text-muted">
-            <i class="bi bi-card-text display-1 mb-3"></i>
-            <h4>暂无身份卡</h4>
-            <p class="mb-4">您可以通过认证获取身份卡</p>
-            <a href="{% url 'apply_verification' %}" 
-               class="btn btn-primary">
-                申请认证
-            </a>
-        </div>
-    </div>
-    {% endif %}
-</div>
-
-<!-- 添加必要的样式 -->
-<style>
-    .card {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
-    }
-</style>
 {% endblock %}

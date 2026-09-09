@@ -14,3 +14,11 @@ env/
 
 staticfiles/
 static/
+!static/
+static/*
+!static/css/
+!static/js/
+!static/images/
+static/images/*
+!static/images/e-era-logo.png
+!static/images/eid-credential.png

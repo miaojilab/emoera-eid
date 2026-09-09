@@ -1,277 +1,282 @@
-{% extends 'base.html' %}
-
+{% extends "base.html" %}
 {% block title %}社团报名{% endblock %}
-
 {% block content %}
-{% csrf_token %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-lg-8 col-md-10">
-            <!-- 页面头部 -->
-            <div class="card shadow-lg border-0 mb-4" style="border-radius: 15px;">
-                <div class="card-header text-white text-center py-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px 15px 0 0;">
-                    {% if existing_application %}
-                    <h2 class="mb-2"><i class="fas fa-clipboard-check me-2"></i>申请状态</h2>
-                    <span class="badge bg-light text-primary fs-6">{{ existing_application.get_status_display }}</span>
-                    {% else %}
-                    <h2 class="mb-2"><i class="fas fa-users me-2"></i>E时代社团报名</h2>
-                    <span class="badge bg-light text-primary fs-6">新生加入申请</span>
-                    {% endif %}
-                </div>
-                
-                <div class="card-body p-4">
-                    <!-- 已有申请：直接展示申请状态窗口 -->
-                    {% if existing_application %}
-                    {% with application=existing_application %}
-                    <!-- 申请基本信息 -->
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <div class="info-item">
-                                <label class="text-muted small">申请人</label>
-                                <p class="fw-bold mb-2">{{ application.real_name }}</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="info-item">
-                                <label class="text-muted small">申请时间</label>
-                                <p class="fw-bold mb-2">{{ application.created_at|date:"Y年m月d日 H:i" }}</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="info-item">
-                                <label class="text-muted small">外部认证状态</label>
-                                <p class="mb-2">
-                                    <span class="badge bg-{% if application.external_verified %}success{% else %}warning{% endif %}">
-                                        {% if application.external_verified %}已认证{% else %}未认证{% endif %}
-                                    </span>
-                                </p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="info-item">
-                                <label class="text-muted small">最后更新</label>
-                                <p class="fw-bold mb-2">{{ application.updated_at|date:"Y年m月d日 H:i" }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 状态进度条 -->
-                    <div class="mb-4">
-                        <h5 class="mb-3"><i class="fas fa-route me-2"></i>申请进度</h5>
-                        <div class="progress mb-3" style="height: 8px;">
-                            <div class="progress-bar bg-primary" role="progressbar"
-                                 style="width: {% if application.status == 'pending' %}25%{% elif application.status == 'interview_sent' %}50%{% elif application.status == 'offer_sent' %}75%{% elif application.status == 'offer_confirmed' %}100%{% else %}25%{% endif %}">
-                            </div>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <small class="text-{% if application.status == 'pending' or application.status == 'interview_sent' or application.status == 'offer_sent' or application.status == 'offer_confirmed' %}primary{% else %}muted{% endif %} fw-bold">提交申请</small>
-                            <small class="text-{% if application.status == 'interview_sent' or application.status == 'offer_sent' or application.status == 'offer_confirmed' %}primary{% else %}muted{% endif %} fw-bold">笔试通知</small>
-                            <small class="text-{% if application.status == 'offer_sent' or application.status == 'offer_confirmed' %}primary{% else %}muted{% endif %} fw-bold">录取通知</small>
-                            <small class="text-{% if application.status == 'offer_confirmed' %}primary{% else %}muted{% endif %} fw-bold">完成</small>
-                        </div>
-                    </div>
-
-                    <!-- 状态详情 -->
-                    <div class="status-content">
-                        {% if application.status == 'pending' %}
-                        <div class="alert alert-info border-0 shadow-sm" style="border-radius: 10px;">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-clock fs-2 me-3 text-info"></i>
-                                <div>
-                                    <h5 class="alert-heading mb-2">等待审核</h5>
-                                    <p class="mb-0">您的申请已提交成功，请耐心等待管理员审核。我们会尽快处理您的申请。</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {% elif application.status == 'interview_sent' %}
-                        <div class="alert alert-success border-0 shadow-sm" style="border-radius: 10px;">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-check-circle fs-2 me-3 text-success"></i>
-                                <div>
-                                    <h5 class="alert-heading mb-2">您已通过初筛</h5>
-                                    <p class="mb-2">已向您的邮箱发送笔试通知，请查收。如有疑问，请联系管理员。</p>
-                                    {% if application.interview_sent_at %}
-                                    <small class="text-muted">笔试通知发送时间：{{ application.interview_sent_at|date:"Y年m月d日 H:i" }}</small>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        {% elif application.status == 'offer_sent' %}
-                        <div class="alert alert-success border-0 shadow-sm mb-3" style="border-radius: 10px;">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-trophy fs-2 me-3 text-warning"></i>
-                                <div>
-                                    <h5 class="alert-heading mb-2">恭喜您被录取！</h5>
-                                    <p class="mb-2">您已被录取，请检查邮箱及时确认offer。</p>
-                                    {% if application.offer_sent_at %}
-                                    <small class="text-muted">录取通知发送时间：{{ application.offer_sent_at|date:"Y年m月d日 H:i" }}</small>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Offer确认状态 -->
-                        <div class="card border-0 bg-light" style="border-radius: 10px;">
-                            <div class="card-body">
-                                <h6 class="card-title"><i class="fas fa-handshake me-2"></i>Offer确认状态</h6>
-                                <div class="d-flex align-items-center mb-3">
-                                    <i class="fas fa-{% if application.offer_confirmed_at %}check-circle text-success{% else %}clock text-warning{% endif %} fs-4 me-3"></i>
-                                    <span class="fs-6">
-                                        {% if application.offer_confirmed_at %}Offer已确认{% else %}等待Offer确认{% endif %}
-                                    </span>
-                                </div>
-                                {% if not application.offer_confirmed_at %}
-                                <a href="{% url 'confirm_offer' application.offer_uuid %}" target="_blank" class="btn btn-primary">
-                                    <i class="fas fa-external-link-alt me-2"></i>确认Offer
-                                </a>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        {% elif application.status == 'offer_confirmed' %}
-                        <div class="text-center py-5">
-                            <i class="fas fa-star fs-1 text-warning mb-4"></i>
-                            <h3 class="text-success mb-3">欢迎加入E时代！</h3>
-                            <p class="text-muted mb-4">您已成功确认offer并加入我们的团队。期待与您一起创造精彩！</p>
-                            {% if application.offer_confirmed_at %}
-                            <small class="text-muted">Offer确认时间：{{ application.offer_confirmed_at|date:"Y年m月d日 H:i" }}</small>
-                            {% endif %}
-                        </div>
+    {% csrf_token %}
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+                <!-- 页面头部 -->
+                <div class="card shadow-lg border-0 mb-4" style="border-radius: 15px;">
+                    <div class="card-header text-white text-center py-4">
+                        {% if existing_application %}
+                            <h2 class="mb-2"><i class="fas fa-clipboard-check me-2" aria-hidden="true"></i>申请状态</h2>
+                            <span class="badge bg-light text-primary fs-6">{{ existing_application.get_status_display }}</span>
+                        {% else %}
+                            <h2 class="mb-2"><i class="fas fa-users me-2" aria-hidden="true"></i>E时代社团报名</h2>
+                            <span class="badge bg-light text-primary fs-6">新生加入申请</span>
                         {% endif %}
                     </div>
-
-                    <!-- 操作按钮 -->
-                    <div class="d-flex justify-content-between mt-4">
-                        <button class="btn btn-outline-primary" onclick="location.reload()">
-                            <i class="fas fa-sync-alt me-2"></i>刷新状态
-                        </button>
-                        <span class="text-muted">审核结果将通过邮件通知您</span>
-                    </div>
-                    {% endwith %}
-                    {% else %}
-                    
-                    <!-- 重新申请提示 -->
-                    {% if rejected_application %}
-                    <div class="alert alert-info border-0 shadow-sm mb-4" style="border-radius: 10px;">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-info-circle fs-4 me-3 text-info"></i>
-                            <div>
-                                <h6 class="alert-heading mb-1">重新申请</h6>
-                                <p class="mb-0">您之前的申请未通过审核（申请时间：{{ rejected_application.created_at|date:"Y年m月d日 H:i" }}），现在可以重新提交申请。</p>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    <!-- 申请流程 -->
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <div class="progress mb-3" style="height: 6px;">
-                                <div class="progress-bar bg-primary" role="progressbar" style="width: 50%" id="progressBar"></div>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <small class="text-muted">认证检查</small>
-                                <small class="text-muted">信息填写</small>
-                                <small class="text-muted">提交完成</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 第一步：认证检查 -->
-                    <div id="step1" class="step-content">
-                        <div class="card border-0 bg-light mb-4" style="border-radius: 10px;">
-                            <div class="card-body text-center py-5">
-                                <i class="fas fa-shield-alt fs-1 text-primary mb-3"></i>
-                                <h4 class="mb-3">第一步：认证状态检查</h4>
-                                <p class="text-muted mb-4">正在验证您的外部认证状态...</p>
-                                
-                                <div id="verificationLoading" class="d-none">
-                                    <div class="spinner-border text-primary me-2" role="status"></div>
-                                    <span>检查中，请稍候...</span>
-                                </div>
-                                
-                                <div id="verificationResult" class="d-none">
-                                    <!-- 结果将在这里显示 -->
-                                </div>
-                                
-                                <button id="startCheckBtn" class="btn btn-primary btn-lg px-4">
-                                    <i class="fas fa-play me-2"></i>开始检查
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 第二步：信息填写 -->
-                    <div id="step2" class="step-content d-none">
-                        <div class="card border-0 bg-light" style="border-radius: 10px;">
-                            <div class="card-body">
-                                <h4 class="mb-4"><i class="fas fa-user-edit me-2"></i>第二步：个人信息确认</h4>
-                                
-                                <form id="applicationForm">
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label for="realName" class="form-label">真实姓名 <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control form-control-lg" id="realName" placeholder="请输入您的真实姓名" required>
-                                            <div class="invalid-feedback">请填写真实姓名</div>
+                    <div class="card-body p-4">
+                        <!-- 已有申请：直接展示申请状态窗口 -->
+                        {% if existing_application %}
+                            {% with application=existing_application %}
+                                <!-- 申请基本信息 -->
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="info-item">
+                                            <label class="text-muted small">申请人</label>
+                                            <p class="fw-bold mb-2">{{ application.real_name }}</p>
                                         </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label for="userEmail" class="form-label">平台邮箱</label>
-                                            <input type="email" class="form-control form-control-lg" id="userEmail" value="{{ user_email }}" readonly>
-                                            <div class="form-text">
-                                                如果邮箱不正确，请到 
-                                                <a href="https://account.emoera.com/profile" target="_blank" class="text-decoration-none">
-                                                    https://account.emoera.com/profile
-                                                </a> 
-                                                修改邮箱并退出重新登录此平台即可自动同步新邮箱
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="info-item">
+                                            <label class="text-muted small">申请时间</label>
+                                            <p class="fw-bold mb-2">{{ application.created_at|date:"Y年m月d日 H:i" }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="info-item">
+                                            <label class="text-muted small">信任中心认证状态</label>
+                                            <p class="mb-2">
+                                                <span class="badge bg-{% if application.external_verified %}success{% else %}warning{% endif %}">
+                                                    {% if application.external_verified %}已认证{% else %}未认证{% endif %}
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="info-item">
+                                            <label class="text-muted small">最后更新</label>
+                                            <p class="fw-bold mb-2">{{ application.updated_at|date:"Y年m月d日 H:i" }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- 状态进度条 -->
+                                <div class="mb-4">
+                                    <h5 class="mb-3"><i class="fas fa-route me-2" aria-hidden="true"></i>申请进度</h5>
+                                    <div class="progress mb-3" style="height: 8px;">
+                                        <div class="progress-bar bg-primary"
+                                             role="progressbar"
+                                             style="width: {% if application.status == 'pending' %}25%{% elif application.status == 'interview_sent' %}50%{% elif application.status == 'offer_sent' %}75%{% elif application.status == 'offer_confirmed' %}100%{% else %}25%{% endif %}">
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-{% if application.status == 'pending' or application.status == 'interview_sent' or application.status == 'offer_sent' or application.status == 'offer_confirmed' %}primary{% else %}muted{% endif %} fw-bold">提交申请</small>
+                                        <small class="text-{% if application.status == 'interview_sent' or application.status == 'offer_sent' or application.status == 'offer_confirmed' %}primary{% else %}muted{% endif %} fw-bold">笔试通知</small>
+                                        <small class="text-{% if application.status == 'offer_sent' or application.status == 'offer_confirmed' %}primary{% else %}muted{% endif %} fw-bold">录取通知</small>
+                                        <small class="text-{% if application.status == 'offer_confirmed' %}primary{% else %}muted{% endif %} fw-bold">完成</small>
+                                    </div>
+                                </div>
+                                <!-- 状态详情 -->
+                                <div class="status-content">
+                                    {% if application.status == "pending" %}
+                                        <div class="alert alert-info border-0 shadow-sm"
+                                             style="border-radius: 10px">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-clock fs-2 me-3 text-info" aria-hidden="true"></i>
+                                                <div>
+                                                    <h5 class="alert-heading mb-2">等待审核</h5>
+                                                    <p class="mb-0">您的申请已提交成功，请耐心等待管理员审核。我们会尽快处理您的申请。</p>
+                                                </div>
                                             </div>
                                         </div>
+                                    {% elif application.status == "interview_sent" %}
+                                        <div class="alert alert-success border-0 shadow-sm"
+                                             style="border-radius: 10px">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-check-circle fs-2 me-3 text-success" aria-hidden="true"></i>
+                                                <div>
+                                                    <h5 class="alert-heading mb-2">您已通过初筛</h5>
+                                                    <p class="mb-2">已向您的邮箱发送笔试通知，请查收。如有疑问，请联系管理员。</p>
+                                                    {% if application.interview_sent_at %}
+                                                        <small class="text-muted">笔试通知发送时间：{{ application.interview_sent_at|date:"Y年m月d日 H:i" }}</small>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% elif application.status == "offer_sent" %}
+                                        <div class="alert alert-success border-0 shadow-sm mb-3"
+                                             style="border-radius: 10px">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-trophy fs-2 me-3 text-warning" aria-hidden="true"></i>
+                                                <div>
+                                                    <h5 class="alert-heading mb-2">恭喜您被录取！</h5>
+                                                    <p class="mb-2">您已被录取，请检查邮箱及时确认录取。</p>
+                                                    {% if application.offer_sent_at %}
+                                                        <small class="text-muted">录取通知发送时间：{{ application.offer_sent_at|date:"Y年m月d日 H:i" }}</small>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- 录取确认状态 -->
+                                        <div class="card border-0 bg-light" style="border-radius: 10px;">
+                                            <div class="card-body">
+                                                <h6 class="card-title"><i class="fas fa-handshake me-2" aria-hidden="true"></i>录取确认状态</h6>
+                                                <div class="d-flex align-items-center mb-3">
+                                                    <i class="fas fa-{% if application.offer_confirmed_at %}check-circle text-success{% else %}clock text-warning{% endif %} fs-4 me-3" aria-hidden="true"></i>
+                                                    <span class="fs-6">{% if application.offer_confirmed_at %}已确认录取{% else %}等待确认录取{% endif %}</span>
+                                                </div>
+                                                {% if not application.offer_confirmed_at %}
+                                                    <a href="{% url 'confirm_offer' application.offer_uuid %}"
+                                                       target="_blank"
+                                                       class="btn btn-primary">
+                                                        <i class="fas fa-external-link-alt me-2" aria-hidden="true"></i>确认录取
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% elif application.status == "offer_confirmed" %}
+                                        <div class="text-center py-5">
+                                            <i class="fas fa-star fs-1 text-warning mb-4" aria-hidden="true"></i>
+                                            <h3 class="text-success mb-3">欢迎加入E时代！</h3>
+                                            <p class="text-muted mb-4">您已成功确认录取并加入我们的团队。期待与您一起创造精彩！</p>
+                                            {% if application.offer_confirmed_at %}
+                                                <small class="text-muted">Offer确认时间：{{ application.offer_confirmed_at|date:"Y年m月d日 H:i" }}</small>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <!-- 操作按钮 -->
+                                <div class="d-flex justify-content-between mt-4">
+                                    <button class="btn btn-outline-primary" onclick="location.reload()">
+                                        <i class="fas fa-sync-alt me-2" aria-hidden="true"></i>刷新状态
+                                    </button>
+                                    <span class="text-muted">审核结果将通过邮件通知您</span>
+                                </div>
+                            {% endwith %}
+                        {% else %}
+                            <!-- 重新申请提示 -->
+                            {% if rejected_application %}
+                                <div class="alert alert-info border-0 shadow-sm mb-4"
+                                     style="border-radius: 10px">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-info-circle fs-4 me-3 text-info" aria-hidden="true"></i>
+                                        <div>
+                                            <h6 class="alert-heading mb-1">重新申请</h6>
+                                            <p class="mb-0">您之前的申请未通过审核（申请时间：{{ rejected_application.created_at|date:"Y年m月d日 H:i" }}），现在可以重新提交申请。</p>
+                                        </div>
                                     </div>
-                                    
-                                    <div class="d-flex justify-content-between mt-4">
-                                        <button type="button" class="btn btn-outline-secondary" id="prevStepBtn">
-                                            <i class="fas fa-arrow-left me-2"></i>上一步
-                                        </button>
-                                        <button type="submit" class="btn btn-success btn-lg px-4" id="submitBtn">
-                                            <i class="fas fa-paper-plane me-2"></i>提交申请
-                                        </button>
+                                </div>
+                            {% endif %}
+                            <!-- 申请流程 -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="progress mb-3" style="height: 6px;">
+                                        <div class="progress-bar bg-primary"
+                                             role="progressbar"
+                                             style="width: 33%"
+                                             aria-valuenow="33"
+                                             aria-valuemin="0"
+                                             aria-valuemax="100"
+                                             aria-label="报名进度"
+                                             id="progressBar"></div>
                                     </div>
-                                </form>
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-muted">认证检查</small>
+                                        <small class="text-muted">信息填写</small>
+                                        <small class="text-muted">提交完成</small>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                            <!-- 第一步：认证检查 -->
+                            <div id="step1" class="step-content">
+                                <div class="card border-0 bg-light mb-4" style="border-radius: 10px;">
+                                    <div class="card-body text-center py-5">
+                                        <i class="fas fa-shield-alt fs-1 text-primary mb-3" aria-hidden="true"></i>
+                                        <h4 class="mb-3">第一步：认证状态检查</h4>
+                                        <p class="text-muted mb-4">先检查认证状态，通过后即可继续填写报名信息。</p>
+                                        <div id="verificationLoading" class="d-none">
+                                            <div class="spinner-border text-primary me-2" role="status"></div>
+                                            <span>检查中，请稍候...</span>
+                                        </div>
+                                        <div id="verificationResult" class="d-none">
+                                            <!-- 结果将在这里显示 -->
+                                        </div>
+                                        <button id="startCheckBtn" class="btn btn-primary btn-lg px-4">
+                                            <i class="fas fa-play me-2" aria-hidden="true"></i>开始检查
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 第二步：信息填写 -->
+                            <div id="step2" class="step-content d-none">
+                                <div class="card border-0 bg-light" style="border-radius: 10px;">
+                                    <div class="card-body">
+                                        <h4 class="mb-4"><i class="fas fa-user-edit me-2" aria-hidden="true"></i>第二步：个人信息确认</h4>
+                                        <form id="applicationForm">
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="realName"
+                                                           class="form-label">真实姓名 <span class="text-danger">*</span></label>
+                                                    <input type="text"
+                                                           class="form-control form-control-lg"
+                                                           id="realName"
+                                                           placeholder="请输入您的真实姓名"
+                                                           required>
+                                                    <div class="invalid-feedback">请填写真实姓名</div>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="userEmail" class="form-label">平台邮箱</label>
+                                                    <input type="email"
+                                                           class="form-control form-control-lg"
+                                                           id="userEmail"
+                                                           value="{{ user_email }}"
+                                                           readonly>
+                                                    <div class="form-text">
+                                                        如果邮箱不正确，请到
+                                                        <a href="https://account.emoera.com/profile"
+                                                           target="_blank"
+                                                           class="text-decoration-none">
+                                                            https://account.emoera.com/profile
+                                                        </a>
+                                                        修改邮箱并退出重新登录此平台即可自动同步新邮箱
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex justify-content-between mt-4">
+                                                <button type="button"
+                                                        class="btn btn-outline-secondary"
+                                                        id="prevStepBtn">
+                                                    <i class="fas fa-arrow-left me-2" aria-hidden="true"></i>上一步
+                                                </button>
+                                                <button type="submit"
+                                                        class="btn btn-success btn-lg px-4"
+                                                        id="submitBtn">
+                                                    <i class="fas fa-paper-plane me-2" aria-hidden="true"></i>提交申请
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 第三步：提交完成 -->
+                            <div id="step3" class="step-content d-none">
+                                <div class="text-center py-5">
+                                    <i class="fas fa-check-circle fs-1 text-success mb-3" aria-hidden="true"></i>
+                                    <h3 class="text-success mb-3">申请提交成功！</h3>
+                                    <p class="text-muted mb-4">您的申请已成功提交，正在加载申请状态...</p>
+                                </div>
+                            </div>
+                        {% endif %}
                     </div>
-
-                    <!-- 第三步：提交完成 -->
-                    <div id="step3" class="step-content d-none">
-                        <div class="text-center py-5">
-                            <i class="fas fa-check-circle fs-1 text-success mb-3"></i>
-                            <h3 class="text-success mb-3">申请提交成功！</h3>
-                            <p class="text-muted mb-4">您的申请已成功提交，正在加载申请状态...</p>
-                        </div>
-                    </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
-</div>
-
-<!-- Toast 通知 -->
-<div class="toast-container position-fixed top-0 end-0 p-3">
-    <div id="notificationToast" class="toast" role="alert">
-        <div class="toast-header">
-            <i class="fas fa-bell text-primary me-2"></i>
-            <strong class="me-auto">通知</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-        </div>
-        <div class="toast-body" id="toastMessage">
-            <!-- 消息内容 -->
+    <!-- Toast 通知 -->
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div id="notificationToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-bell text-primary me-2" aria-hidden="true"></i>
+                <strong class="me-auto">通知</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+                <!-- 消息内容 -->
+            </div>
         </div>
     </div>
-</div>
-
-<script>
+    <script>
 document.addEventListener('DOMContentLoaded', function() {
     let currentStep = 1;
     let verificationResult = {};
@@ -307,8 +312,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function updateProgress(step) {
-        const progress = step * 50;
+        const progress = Math.round(step / 3 * 100);
         progressBar.style.width = progress + '%';
+        progressBar.setAttribute('aria-valuenow', progress);
     }
     
     function showStep(step) {
@@ -326,7 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 获取CSRF token
     const csrfToken = '{{ csrf_token }}';
     
-    // 检查外部认证状态
+    // 检查信任中心认证状态
     async function checkExternalVerification() {
         startCheckBtn.style.display = 'none';
         verificationLoading.classList.remove('d-none');
@@ -348,7 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.is_not_submitted) {
                     verificationResultDiv.innerHTML = `
                         <div class="alert alert-warning border-0 shadow-sm">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <i class="fas fa-exclamation-triangle me-2" aria-hidden="true"></i>
                             <strong>需要完成认证</strong><br>
                             您需要先提交核心成员报名表。请前往 
                             <a href="https://trust.emoera.com/schemes/3" target="_blank" class="alert-link">
@@ -361,26 +367,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else if (data.is_approved) {
                     verificationResultDiv.innerHTML = `
                         <div class="alert alert-success border-0 shadow-sm">
-                            <i class="fas fa-check-circle me-2"></i>
+                            <i class="fas fa-check-circle me-2" aria-hidden="true"></i>
                             <strong>认证通过</strong><br>
                             您的认证状态：${data.status}<br>
                             可以继续下一步申请。
                         </div>
                         <button class="btn btn-primary btn-lg mt-3" onclick="nextStep()">
-                            <i class="fas fa-arrow-right me-2"></i>下一步
+                            <i class="fas fa-arrow-right me-2" aria-hidden="true"></i>下一步
                         </button>
                     `;
                     showToast('认证状态检查通过', 'success');
                 } else {
                     verificationResultDiv.innerHTML = `
                         <div class="alert alert-warning border-0 shadow-sm">
-                            <i class="fas fa-clock me-2"></i>
+                            <i class="fas fa-clock me-2" aria-hidden="true"></i>
                             <strong>认证审核中</strong><br>
                             您的认证状态：${data.status}<br>
                             请等待认证审核通过后再回来提交申请。
                         </div>
                         <button class="btn btn-outline-primary mt-3" onclick="location.reload()">
-                            <i class="fas fa-redo me-2"></i>重新检查
+                            <i class="fas fa-redo me-2" aria-hidden="true"></i>重新检查
                         </button>
                     `;
                     showToast('认证正在审核中，请等待', 'warning');
@@ -390,7 +396,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.message && data.message.includes('404')) {
                     verificationResultDiv.innerHTML = `
                         <div class="alert alert-warning border-0 shadow-sm">
-                            <i class="fas fa-user-plus me-2"></i>
+                            <i class="fas fa-user-plus me-2" aria-hidden="true"></i>
                             <strong>需要注册并完成认证</strong><br>
                             您还没有在认证系统中注册，请先前往 
                             <a href="https://trust.emoera.com/schemes/3" target="_blank" class="alert-link">
@@ -399,25 +405,25 @@ document.addEventListener('DOMContentLoaded', function() {
                             注册账号并完成核心成员认证，然后再回来提交申请。
                             <div class="mt-2">
                                 <small class="text-muted">
-                                    <i class="fas fa-info-circle me-1"></i>
+                                    <i class="fas fa-info-circle me-1" aria-hidden="true"></i>
                                     首次使用需要先注册认证系统账号
                                 </small>
                             </div>
                         </div>
                         <button class="btn btn-outline-primary mt-3" onclick="location.reload()">
-                            <i class="fas fa-redo me-2"></i>重新检查
+                            <i class="fas fa-redo me-2" aria-hidden="true"></i>重新检查
                         </button>
                     `;
                     showToast('请先注册并完成外部认证', 'warning');
                 } else {
                     verificationResultDiv.innerHTML = `
                         <div class="alert alert-danger border-0 shadow-sm">
-                            <i class="fas fa-times-circle me-2"></i>
+                            <i class="fas fa-times-circle me-2" aria-hidden="true"></i>
                             <strong>检查失败</strong><br>
                             ${data.message || '认证检查失败'}
                         </div>
                         <button class="btn btn-outline-primary mt-3" onclick="location.reload()">
-                            <i class="fas fa-redo me-2"></i>重新检查
+                            <i class="fas fa-redo me-2" aria-hidden="true"></i>重新检查
                         </button>
                     `;
                     showToast(data.message || '认证检查失败', 'error');
@@ -429,12 +435,12 @@ document.addEventListener('DOMContentLoaded', function() {
             verificationLoading.classList.add('d-none');
             verificationResultDiv.innerHTML = `
                 <div class="alert alert-danger border-0 shadow-sm">
-                    <i class="fas fa-times-circle me-2"></i>
+                    <i class="fas fa-times-circle me-2" aria-hidden="true"></i>
                     <strong>网络错误</strong><br>
                     检查认证状态时发生错误，请稍后重试。
                 </div>
                 <button class="btn btn-outline-primary mt-3" onclick="location.reload()">
-                    <i class="fas fa-redo me-2"></i>重新检查
+                    <i class="fas fa-redo me-2" aria-hidden="true"></i>重新检查
                 </button>
             `;
             verificationResultDiv.classList.remove('d-none');
@@ -504,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.loadingManager.hideLoading(submitBtn);
                 } else {
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>提交申请';
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2" aria-hidden="true"></i>提交申请';
                 }
             }
         } catch (error) {
@@ -514,7 +520,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.loadingManager.hideLoading(submitBtn);
             } else {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>提交申请';
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2" aria-hidden="true"></i>提交申请';
             }
         }
     }
@@ -543,66 +549,6 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(checkExternalVerification, 1000);
     {% endif %}
 });
-</script>
-
-<!-- Font Awesome -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-<style>
-.info-item {
-    padding: 0.5rem 0;
-}
-
-.info-item label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.card {
-    transition: all 0.3s ease;
-}
-
-.card:hover {
-    transform: translateY(-2px);
-}
-
-.btn {
-    transition: all 0.3s ease;
-}
-
-.btn:hover {
-    transform: translateY(-1px);
-}
-
-.alert {
-    border-left: 4px solid;
-}
-
-.alert-info {
-    border-left-color: #0dcaf0;
-}
-
-.alert-success {
-    border-left-color: #198754;
-}
-
-.alert-warning {
-    border-left-color: #ffc107;
-}
-
-.alert-danger {
-    border-left-color: #dc3545;
-}
-
-.progress {
-    border-radius: 10px;
-}
-
-.form-control:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-}
-</style>
+    </script>
+    <!-- Font Awesome -->
 {% endblock %}

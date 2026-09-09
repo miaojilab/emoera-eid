@@ -1,259 +1,49 @@
-{% extends 'base.html' %}
-
-{% block title %}申请认证 - 会员中心{% endblock %}
-
+{% extends "base.html" %}
+{% block title %}申请身份卡 · E时代 ID{% endblock %}
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8 col-md-10">
-            <!-- 页面页头 -->
-            <div class="card shadow-lg border-0 mb-4" style="border-radius: 15px;">
-                <div class="card-header text-white py-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px 15px 0 0;">
-                    <div class="d-flex align-items-center gap-2">
-                        <h2 class="mb-0"><i class="fas fa-shield-alt me-2"></i>申请身份卡</h2>
-                        <span class="badge bg-light text-primary ms-2 fs-6">身份认证</span>
-                    </div>
-                    <p class="text-white-50 mb-0 mt-1">提交真实信息，获取官方认证的身份标识</p>
-                </div>
+    <div class="container">
+        <div class="page-heading"><div><p class="eyebrow">IDENTITY APPLICATION</p><h1>申请身份卡</h1><p>填写真实信息，让你的身份得到确认。</p></div><a class="text-action" href="{% url 'identity_card' %}">返回我的身份卡 ↗</a></div>
+        <div class="form-layout">
+            <div>
+                <section class="card mb-4">
+                    <div class="card-body">
+                        <div class="steps-inline" aria-label="申请流程"><span><b>1</b>填写资料</span><i aria-hidden="true">→</i><span><b>2</b>等待审核</span><i aria-hidden="true">→</i><span><b>3</b>获取身份卡</span></div>
+                        <form method="post" class="needs-validation" novalidate>
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-sm-6 form-field">
+                                    <label for="real_name" class="form-label">真实姓名</label><input class="form-control"
+       id="real_name"
+       name="real_name"
+       autocomplete="name"
+       placeholder="请输入真实姓名"
+       required>
+                                    <div class="invalid-feedback">请填写真实姓名。</div>
+                                </div>
+                                <div class="col-sm-6 form-field">
+                                    <label for="student_id" class="form-label">学号</label><input class="form-control"
+       id="student_id"
+       name="student_id"
+       placeholder="请输入学号"
+       required>
+                                    <div class="invalid-feedback">请填写学号。</div>
+                                </div>
+                            </div>
+                            <div class="form-field">
+                                <label for="identity_title" class="form-label">认证身份名称</label><input class="form-control"
+       id="identity_title"
+       name="identity_title"
+       placeholder="例如：E时代23级核心成员"
+       aria-describedby="identity-hint"
+       required>
+                                <div id="identity-hint" class="form-text">填写能够准确描述你的具体身份的名称。</div>
+                                <div class="invalid-feedback">请填写认证身份名称。</div>
+                            </div>
+                            <div class="form-field"><label for="identity_type" class="form-label">身份类型</label><select class="form-select" id="identity_type" name="identity_type" required><option value="" selected disabled>请选择身份类型</option>{% for value,label in identity_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select><div class="invalid-feedback">请选择身份类型。</div></div>
+                            <button class="btn btn-primary w-100"
+                                    type="submit">提交身份申请 <span aria-hidden="true">→</span></button>
+                        </form>
+                    </div></section><section class="card"><div class="card-header"><h2 class="h5 mb-0">申请记录</h2></div><div class="card-body">{% for app in previous_applications %}<div class="history-item"><div class="history-icon"><i class="far fa-id-card" aria-hidden="true"></i></div><div class="history-content"><div class="history-title">{{ app.identity_title }}</div><div class="history-meta">{{ app.get_identity_type_display }} · {{ app.created_at|date:'Y-m-d H:i' }}</div></div><span class="badge {% if app.status == 'approved' %}bg-success{% elif app.status == 'rejected' %}bg-danger{% else %}bg-warning{% endif %} history-badge">{{ app.get_status_display }}</span></div>{% empty %}<p class="mb-0 small">你还没有提交过申请。提交后可在这里查看审核结果。</p>{% endfor %}</div></section></div>
+                    <aside class="aside-note"><h3>提交前，确认这些信息</h3><ul><li>姓名与学号真实、准确。</li><li>身份名称与选择的身份类型一致。</li><li>已有待审核申请时，请等待处理后再提交。</li></ul><div class="note-divider"></div><h3>申请之后</h3><p>审核通过后，身份卡会出现在“我的身份卡”中。你也可以随时回来查看申请记录。</p><a class="text-action" href="{% url 'identity_card' %}">我的身份卡 →</a></aside></div>
             </div>
-
-            <!-- 消息提示 -->
-            {% if messages %}
-            <div class="messages mb-4">
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <!-- 认证申请表单 -->
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
-                    <h4 class="mb-0"><i class="fas fa-edit text-primary me-2"></i>认证信息</h4>
-                    <p class="text-muted mb-0 small mt-1">请填写您的真实信息，审核通过后将为您生成身份卡</p>
-                </div>
-                <div class="card-body p-4">
-                    <form method="post" class="needs-validation" novalidate>
-                        {% csrf_token %}
-
-                        <div class="form-field">
-                            <div class="field-label">
-                                <span class="field-icon"><i class="fas fa-user"></i></span>
-                                <label for="real_name" class="form-label mb-0">姓名</label>
-                            </div>
-                            <input type="text" class="form-control form-control-lg" id="real_name" name="real_name" placeholder="请输入您的真实姓名" required>
-                            <div class="invalid-feedback">请输入您的姓名</div>
-                        </div>
-
-                        <div class="form-field">
-                            <div class="field-label">
-                                <span class="field-icon"><i class="fas fa-graduation-cap"></i></span>
-                                <label for="student_id" class="form-label mb-0">学号</label>
-                            </div>
-                            <input type="text" class="form-control form-control-lg" id="student_id" name="student_id" placeholder="请输入您的学号" required>
-                            <div class="invalid-feedback">请输入您的学号</div>
-                        </div>
-
-                        <div class="form-field">
-                            <div class="field-label">
-                                <span class="field-icon"><i class="fas fa-id-card"></i></span>
-                                <label for="identity_title" class="form-label mb-0">认证身份</label>
-                            </div>
-                            <input type="text" class="form-control form-control-lg" id="identity_title" name="identity_title"
-                                   placeholder="例：E时代23级核心成员" required>
-                            <div class="form-text">请填写您想要认证的具体身份，例如：E时代23级核心成员</div>
-                            <div class="invalid-feedback">请输入您要认证的身份</div>
-                        </div>
-
-                        <div class="form-field mb-4">
-                            <div class="field-label">
-                                <span class="field-icon"><i class="fas fa-tags"></i></span>
-                                <label for="identity_type" class="form-label mb-0">身份类型</label>
-                            </div>
-                            <select class="form-select form-select-lg" id="identity_type" name="identity_type" required>
-                                <option value="" selected disabled>请选择身份类型</option>
-                                {% for value, label in identity_choices %}
-                                <option value="{{ value }}">{{ label }}</option>
-                                {% endfor %}
-                            </select>
-                            <div class="invalid-feedback">请选择身份类型</div>
-                        </div>
-
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-paper-plane me-2"></i>提交申请
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- 申请历史 -->
-            {% if previous_applications %}
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
-                    <h5 class="mb-0"><i class="fas fa-history text-primary me-2"></i>申请历史</h5>
-                </div>
-                <div class="card-body p-4">
-                    {% for app in previous_applications %}
-                    <div class="history-item">
-                        <div class="history-icon">
-                            <i class="fas fa-id-card"></i>
-                        </div>
-                        <div class="history-content">
-                            <div class="history-title">{{ app.identity_title }}</div>
-                            <div class="history-meta">
-                                {{ app.get_identity_type_display }} · 申请时间：{{ app.created_at|date:"Y-m-d H:i" }}
-                            </div>
-                        </div>
-                        <span class="badge {% if app.status == 'approved' %}bg-success{% elif app.status == 'rejected' %}bg-danger{% else %}bg-warning{% endif %} history-badge">
-                            {{ app.get_status_display }}
-                        </span>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
-
-<style>
-/* 表单字段 */
-.form-field {
-    margin-bottom: 1.5rem;
-}
-
-.field-label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.field-label .form-label {
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.field-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: white;
-    font-size: 0.85rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.form-control:focus,
-.form-select:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-    border: none;
-    transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-}
-
-/* 申请历史 */
-.history-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    border-radius: 0.75rem;
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    background: var(--bg-white);
-    transition: all 0.3s ease;
-    margin-bottom: 0.75rem;
-}
-
-.history-item:last-child {
-    margin-bottom: 0;
-}
-
-.history-item:hover {
-    background: var(--bg-light);
-    transform: translateX(4px);
-}
-
-.history-icon {
-    width: 44px;
-    height: 44px;
-    flex-shrink: 0;
-    border-radius: 12px;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: white;
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: var(--shadow-sm);
-}
-
-.history-content {
-    flex: 1;
-    min-width: 0;
-}
-
-.history-title {
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 0.25rem;
-}
-
-.history-meta {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-}
-
-.history-badge {
-    flex-shrink: 0;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-}
-
-/* 响应式 */
-@media (max-width: 576px) {
-    .history-item {
-        flex-wrap: wrap;
-    }
-
-    .history-badge {
-        width: 100%;
-        text-align: center;
-    }
-}
-</style>
-
-<script>
-// 表单验证
-(function () {
-    'use strict'
-    var forms = document.querySelectorAll('.needs-validation')
-    Array.prototype.slice.call(forms).forEach(function (form) {
-        form.addEventListener('submit', function (event) {
-            if (!form.checkValidity()) {
-                event.preventDefault()
-                event.stopPropagation()
-            }
-            form.classList.add('was-validated')
-        }, false)
-    })
-})()
-</script>
 {% endblock %}

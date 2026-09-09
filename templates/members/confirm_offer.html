@@ -1,295 +1,58 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>确认 Offer - E时代</title>
-    
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-    
-    <style>
-        body {
-            min-height: 100vh;
-            background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c);
-            background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Arial', sans-serif;
-        }
-
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        .offer-container {
-            max-width: 500px;
-            width: 90%;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-            padding: 3rem;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .offer-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 5px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-        }
-
-        .logo {
-            width: 100px;
-            height: 100px;
-            margin: 0 auto 2rem auto;
-            border-radius: 50%;
-            background: url('https://we.emoera.com/img/elogo.jpg') no-repeat center center;
-            background-size: cover;
-            border: 4px solid #fff;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
-        }
-
-        .logo:hover {
-            transform: scale(1.1);
-        }
-
-        .offer-container h1 {
-            color: #2c3e50;
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .offer-title {
-            font-size: 1.4rem;
-            color: #667eea;
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
-
-        .welcome-text {
-            color: #7f8c8d;
-            font-size: 1rem;
-            margin-bottom: 2rem;
-            line-height: 1.6;
-        }
-
-        .offer-btn {
-            padding: 1rem 2.5rem;
-            font-size: 1.2rem;
-            font-weight: 600;
-            border: none;
-            border-radius: 50px;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            min-width: 200px;
-        }
-
-        .accept-btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        .accept-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
-        }
-
-        .accepted-btn {
-            background: linear-gradient(135deg, #2ecc71, #27ae60);
-            color: white;
-            cursor: pointer;
-            box-shadow: 0 10px 20px rgba(46, 204, 113, 0.3);
-            transition: all 0.3s ease;
-        }
-
-        .accepted-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 30px rgba(46, 204, 113, 0.4);
-        }
-
-        .loading-btn {
-            background: linear-gradient(135deg, #bdc3c7, #95a5a6);
-            color: white;
-            cursor: not-allowed;
-        }
-
-        .error-btn {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-            color: white;
-            cursor: default;
-        }
-
-        .error-container {
-            max-width: 400px;
-            width: 90%;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-            padding: 3rem;
-            text-align: center;
-        }
-
-        .error-icon {
-            font-size: 4rem;
-            color: #e74c3c;
-            margin-bottom: 1rem;
-        }
-
-
-
-        .confetti-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1000;
-        }
-
-        /* 右上角Toast通知样式 */
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1050;
-            max-width: 350px;
-        }
-
-        .toast-custom {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            overflow: hidden;
-        }
-
-        .toast-custom .toast-header {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 12px 16px;
-        }
-
-        .toast-custom .toast-body {
-            padding: 16px;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        .toast-success .toast-header {
-            background: linear-gradient(135deg, #2ecc71, #27ae60);
-        }
-
-        .toast-error .toast-header {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-        }
-
-        @media (max-width: 576px) {
-            .offer-container {
-                padding: 2rem;
-            }
-            
-            .offer-container h1 {
-                font-size: 1.6rem;
-            }
-            
-            .offer-title {
-                font-size: 1.2rem;
-            }
-            
-            .toast-container {
-                top: 10px;
-                right: 10px;
-                left: 10px;
-                max-width: none;
-            }
-            
-            .toast-custom {
-                width: 100%;
-            }
-        }
-    </style>
-</head>
-<body>
-
-{% if error %}
-<div class="error-container">
-    <i class="fas fa-exclamation-triangle error-icon"></i>
-    <h2 class="text-danger mb-3">出现错误</h2>
-    <p class="text-muted">{{ error }}</p>
-    <button class="btn btn-outline-primary mt-3" onclick="window.close()">
-        <i class="fas fa-arrow-left me-2"></i>返回
-    </button>
-</div>
-{% else %}
-<div class="offer-container">
-    <div class="logo"></div>
-    <h1>您好，{{ application.real_name }}！</h1>
-    <div class="offer-title">
-        <i class="fas fa-trophy text-warning me-2"></i>
-        恭喜获得 E时代 核心团队 Offer
-    </div>
-    <p class="welcome-text">
-        感谢您对E时代的关注与支持！我们的社团文化是开放包容，真诚热爱，欢迎您的加入。
-        <br><br>
-        期待与您一同开启新的征程，互相支持，共同成长。
-    </p>
-
-    {% if confirmed %}
-        <button class="offer-btn accepted-btn" id="acceptedBtn">
-            <i class="fas fa-check-circle me-2"></i>已接受
-        </button>
-        <div class="mt-3">
-            <small class="text-muted">
-                <i class="fas fa-calendar-alt me-1"></i>
-                确认时间：{{ application.offer_confirmed_at|date:"Y年m月d日" }}
-            </small>
+{% extends "base.html" %}
+{% block title %}确认录取 · E时代 ID{% endblock %}
+{% block content %}
+    {% if error %}
+        <div class="offer-container error-container">
+            <i class="fas fa-exclamation-triangle error-icon" aria-hidden="true"></i>
+            <h2 class="text-danger mb-3">出现错误</h2>
+            <p class="text-muted">{{ error }}</p>
+            <a class="btn btn-outline-primary mt-3"
+               href="{% url 'club_application' %}">
+                <i class="fas fa-arrow-left me-2" aria-hidden="true"></i>返回社团报名
+            </a>
         </div>
     {% else %}
-        <button class="offer-btn loading-btn" id="offerBtn" disabled>
-            <span class="spinner-border spinner-border-sm me-2"></span>
-            加载中...
-        </button>
+        <div class="offer-container">
+            <div class="logo"></div>
+            <h1>您好，{{ application.real_name }}！</h1>
+            <div class="offer-title">
+                <i class="fas fa-trophy text-warning me-2" aria-hidden="true"></i>
+                恭喜获得 E时代核心团队录取通知
+            </div>
+            <p class="welcome-text">
+                感谢您对E时代的关注与支持！我们的社团文化是开放包容，真诚热爱，欢迎您的加入。
+                <br>
+                <br>
+                期待与您一同开启新的征程，互相支持，共同成长。
+            </p>
+            {% if confirmed %}
+                <button class="offer-btn accepted-btn" disabled id="acceptedBtn">
+                    <i class="fas fa-check-circle me-2" aria-hidden="true"></i>已接受
+                </button>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-calendar-alt me-1" aria-hidden="true"></i>
+                        确认时间：{{ application.offer_confirmed_at|date:"Y年m月d日" }}
+                    </small>
+                </div>
+            {% else %}
+                <button class="offer-btn loading-btn" id="offerBtn" disabled>
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    加载中...
+                </button>
+            {% endif %}
+            <div class="mt-4">
+                <small class="text-muted">
+                    <i class="fas fa-heart text-danger me-1" aria-hidden="true"></i>
+                    再次感谢您的加入 - E时代研发中心
+                </small>
+            </div>
+        </div>
     {% endif %}
-    
-    <div class="mt-4">
-        <small class="text-muted">
-            <i class="fas fa-heart text-danger me-1"></i>
-            再次感谢您的加入 - E时代研发中心
-        </small>
-    </div>
-</div>
-{% endif %}
-
-<!-- Toast通知容器 -->
-<div class="toast-container" id="toastContainer"></div>
-
-<canvas class="confetti-canvas" id="confettiCanvas"></canvas>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-<script>
+    <!-- Toast通知容器 -->
+    <div class="toast-container" id="toastContainer"></div>
+    <canvas class="confetti-canvas" id="confettiCanvas"></canvas>
+    <script>
 // 创建Toast通知
 function showToast(title, message, type = 'info', autoHide = true) {
     const toastContainer = document.getElementById('toastContainer');
@@ -304,7 +67,7 @@ function showToast(title, message, type = 'info', autoHide = true) {
     const toastHtml = `
         <div class="toast toast-custom toast-${type}" id="${toastId}" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="toast-header">
-                <i class="${iconMap[type]} me-2"></i>
+                <i class="${iconMap[type]} me-2" aria-hidden="true"></i>
                 <strong class="me-auto">${title}</strong>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
@@ -348,6 +111,7 @@ function initConfettiSystem() {
 
 // 创建新的烟花效果（可叠加）
 function createConfetti(sourceElement = null) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     if (!canvas) {
         initConfettiSystem();
     }
@@ -507,89 +271,39 @@ function clearAllConfetti() {
     }
 }
 
-// 处理offer确认
-function acceptOffer() {
-    const offerBtn = document.getElementById('offerBtn');
-    
-    // 立即触发烟花效果，从按钮位置爆发
-    createConfetti(offerBtn);
-    
-    offerBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>确认中...';
-    offerBtn.disabled = true;
-    
-    fetch(window.location.href, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
+// Only show success after the server confirms the acceptance.
+async function acceptOffer() {
+    const button = document.getElementById('offerBtn');
+    if (button.disabled) return;
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>确认中…';
+    try {
+        const response = await fetch(window.location.href, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        if (!response.ok || !['success', 'already_confirmed'].includes(data.status)) {
+            throw new Error('acceptance_failed');
         }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success' || data.status === 'already_confirmed') {
-            // 显示成功效果
-            offerBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>已接受';
-            offerBtn.className = 'offer-btn accepted-btn';
-            
-            // 确保按钮可点击并重新绑定点击事件为烟花触发
-            offerBtn.disabled = false;
-            offerBtn.style.cursor = 'pointer';
-            offerBtn.onclick = function() {
-                createConfetti(offerBtn);
-                showToast('太棒了！', '欢迎加入E时代！刷新页面点击“已接受”按钮可重放烟花', 'success');
-            };
-            
-            // 显示成功消息
-            showToast('恭喜！', '您已成功接受offer，欢迎加入E时代！', 'success');
-            
-            // 自动刷新页面以显示确认时间
-            setTimeout(() => {
-                location.reload();
-            }, 10);
-        } else {
-            offerBtn.innerHTML = '<i class="fas fa-times me-2"></i>确认失败';
-            offerBtn.className = 'offer-btn error-btn';
-            
-            showToast('确认失败', '请联系管理员处理', 'error');
-        }
-    })
-    .catch(() => {
-        offerBtn.innerHTML = '<i class="fas fa-times me-2"></i>网络错误';
-        offerBtn.className = 'offer-btn error-btn';
-        
-        showToast('网络错误', '请检查网络连接，点击按钮重试', 'error', false);
-        
-        // 3秒后自动重新加载
-        setTimeout(() => {
-            location.reload();
-        }, 3000);
-    });
+        button.innerHTML = '<i class="fas fa-check-circle me-2" aria-hidden="true"></i>已接受录取';
+        button.className = 'offer-btn accepted-btn';
+        createConfetti(button);
+        showToast('录取已确认', '欢迎加入 E时代！', 'success');
+        setTimeout(() => location.reload(), 1200);
+    } catch (_) {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-redo me-2" aria-hidden="true"></i>重试确认';
+        showToast('未能确认录取', '请检查网络后重试；如仍无法确认，请联系管理员。', 'error', false);
+    }
 }
 
-// Offer确认不需要CSRF Token（已在后端设置为exempt）
-
-// 页面加载完成后的初始化
 document.addEventListener('DOMContentLoaded', function() {
-    const offerBtn = document.getElementById('offerBtn');
-    const acceptedBtn = document.getElementById('acceptedBtn');
-    
-    if (offerBtn) {
-        // 模拟加载过程
-        setTimeout(() => {
-            offerBtn.innerHTML = '<i class="fas fa-handshake me-2"></i>接受 Offer';
-            offerBtn.className = 'offer-btn accept-btn';
-            offerBtn.disabled = false;
-            offerBtn.onclick = acceptOffer;
-        }, 1500);
-    }
-    
-    if (acceptedBtn) {
-        // 已接受状态的按钮点击效果 - 确保按钮可点击
-        acceptedBtn.disabled = false;
-        acceptedBtn.style.cursor = 'pointer';
-        acceptedBtn.onclick = function() {
-            createConfetti(acceptedBtn);
-            showToast('太棒了！', '欢迎加入E时代！刷新页面点击“已接受”按钮可重放烟花', 'success');
-        };
+    const button = document.getElementById('offerBtn');
+    if (button) {
+        button.innerHTML = '<i class="fas fa-handshake me-2" aria-hidden="true"></i>接受录取';
+        button.disabled = false;
+        button.addEventListener('click', acceptOffer);
     }
 });
 
@@ -600,7 +314,5 @@ window.addEventListener('resize', function() {
         canvas.height = window.innerHeight;
     }
 });
-</script>
-
-</body>
-</html>
+    </script>
+{% endblock %}
