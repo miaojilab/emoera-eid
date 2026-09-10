@@ -141,3 +141,11 @@ start_server.py    # 启动辅助脚本
 ## License
 
 本项目基于 [Apache License 2.0](./LICENSE) 开源。
+
+## 认证与社团通知格式
+
+身份认证及社团报名事件默认发送企业微信模板卡片或飞书消息卡片。企微可通过 `WECOM_NOTIFY_FORMAT=markdown` 或 `text` 切换格式；飞书可通过 `FEISHU_NOTIFY_FORMAT=text` 恢复纯文字。未配置机器人时不发送消息。
+
+`NOTIFY_PUBLIC_BASE_URL` 默认为 `https://neweid.emoera.com`，用于生成品牌 Logo 和审核页面链接。身份认证进入身份审核列表，社团事件进入社团审核列表并选中对应状态；仍需登录及原有分项审核权限。不会在卡片中直接通过、拒绝或确认 Offer。卡片不包含真实姓名、学号、邮箱或 Offer 确认码。通用 `notify_text` / `notify_event` 保持纯文本行为。
+
+通知测试（模拟 HTTP，不向群发消息）：`python3 -m unittest discover -s tests -p 'test_notify.py'`。

@@ -18,6 +18,8 @@ import requests
 from django.conf import settings
 from django.utils import timezone
 
+from .notification_payload import build_event_payload
+
 logger = logging.getLogger(__name__)
 
 TIMEOUT_SECONDS = 5
@@ -63,8 +65,7 @@ def _build_payload(provider: str, text: str) -> dict:
     return {'msgtype': 'text', 'text': {'content': text}}
 
 
-def _post_webhook(target: dict, text: str) -> bool:
-    payload = _build_payload(target['provider'], text)
+def _post_webhook(target: dict, payload: dict) -> bool:
     try:
         response = requests.post(
             target['url'],
@@ -72,7 +73,7 @@ def _post_webhook(target: dict, text: str) -> bool:
             timeout=TIMEOUT_SECONDS,
             headers={'Content-Type': 'application/json'},
         )
-        if response.status_code >= 400:
+        if not 200 <= response.status_code < 300:
             logger.error('notify %s HTTP %s', target['provider'], response.status_code)
             return False
         body = {}
@@ -80,6 +81,9 @@ def _post_webhook(target: dict, text: str) -> bool:
             body = response.json()
         except ValueError:
             body = {}
+        if not isinstance(body, dict):
+            logger.error('notify %s invalid response', target['provider'])
+            return False
         if isinstance(body.get('errcode'), int) and body['errcode'] != 0:
             logger.error('notify wecom errcode=%s', body.get('errcode'))
             return False
@@ -88,7 +92,8 @@ def _post_webhook(target: dict, text: str) -> bool:
             return False
         return True
     except requests.RequestException as exc:
-        logger.error('notify %s failed: %s', target['provider'], exc)
+        # Request exception text can expose the webhook secret.
+        logger.error('notify %s failed: %s', target['provider'], type(exc).__name__)
         return False
 
 
@@ -100,7 +105,7 @@ def notify_text(text: str) -> list[bool]:
     targets = _collect_targets()
     if not targets:
         return []
-    return [_post_webhook(target, message) for target in targets]
+    return [_post_webhook(target, _build_payload(target['provider'], message)) for target in targets]
 
 
 def _safe(value, fallback: str = '-') -> str:
@@ -117,29 +122,17 @@ def notify_event(title: str, lines: Iterable[str] | None = None) -> list[bool]:
     return notify_text('\n'.join(parts))
 
 
+def _notify_application(**event) -> list[bool]:
+    return [_post_webhook(target, build_event_payload(target['provider'], **event))
+            for target in _collect_targets()]
+
+
 def notify_verification_event(*, event: str, application_id, username: str, identity_type: str = '', status: str = '') -> list[bool]:
-    return notify_event(
-        'E时代会员中心',
-        [
-            f'事件: {_safe(event)}',
-            f'类型: 身份认证',
-            f'申请ID: {_safe(application_id)}',
-            f'用户: {_safe(username)}',
-            f'身份类型: {_safe(identity_type)}' if identity_type else '',
-            f'状态: {_safe(status)}' if status else '',
-        ],
-    )
+    return _notify_application(kind='verification', event=event, application_id=application_id,
+                               username=username, identity_type=identity_type, status=status)
 
 
 def notify_club_event(*, event: str, application_id, username: str, status: str = '') -> list[bool]:
-    # Intentionally omit real_name / email / student identifiers.
-    return notify_event(
-        'E时代会员中心',
-        [
-            f'事件: {_safe(event)}',
-            f'类型: 社团报名',
-            f'申请ID: {_safe(application_id)}',
-            f'用户: {_safe(username)}',
-            f'状态: {_safe(status)}' if status else '',
-        ],
-    )
+    # Omit real names, email, student identifiers and Offer confirmation tokens.
+    return _notify_application(kind='club', event=event, application_id=application_id,
+                               username=username, status=status)
