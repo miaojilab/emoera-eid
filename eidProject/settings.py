@@ -106,20 +106,30 @@ WSGI_APPLICATION = 'eidProject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': get_required_env('DB_NAME'),
-        'USER': get_required_env('DB_USER'),
-        'PASSWORD': get_required_env('DB_PASSWORD'),
-        'HOST': get_required_env('DB_HOST'),
-        'PORT': os.getenv('DB_PORT', '3306'),
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+# 开发期可用 DB_ENGINE=sqlite 快速起项目，无需安装 MySQL
+_db_engine = os.getenv('DB_ENGINE', 'mysql')
+if _db_engine == 'sqlite':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.getenv('DB_NAME', str(BASE_DIR / 'db.sqlite3')),
         }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': get_required_env('DB_NAME'),
+            'USER': get_required_env('DB_USER'),
+            'PASSWORD': get_required_env('DB_PASSWORD'),
+            'HOST': get_required_env('DB_HOST'),
+            'PORT': os.getenv('DB_PORT', '3306'),
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            }
+        }
+    }
 
 
 # Password validation
@@ -188,17 +198,32 @@ WHITENOISE_MIMETYPES = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# 添加OAuth2相关配置
-OAUTH2_PROVIDER = {
-    'OAUTH2_SERVER_URL': os.getenv('OAUTH2_SERVER_URL', 'https://account.emoera.com'),
-    'OAUTH2_API_URL': os.getenv('OAUTH2_API_URL', 'https://accountapi.emoera.com'),
-    'CLIENT_ID': get_required_env('OAUTH2_CLIENT_ID'),
-    'CLIENT_SECRET': get_required_env('OAUTH2_CLIENT_SECRET'),
-    'SCOPES': {
-        'read': 'Read scope',
-        'write': 'Write scope',
-    }
-}
+# OIDC（OpenID Connect）配置 —— 采用 2026-08-27 起的新接入方案：
+# Authorization Code Flow + S256 PKCE + RS256 ID Token。
+# 端点默认值来自 OIDC Discovery 文档，可通过环境变量覆盖。
+OIDC_ISSUER = os.getenv('OIDC_ISSUER', 'https://accountapi.emoera.com/api')
+OIDC_AUTHORIZATION_ENDPOINT = os.getenv(
+    'OIDC_AUTHORIZATION_ENDPOINT',
+    'https://account.emoera.com/api/oauth2/authorize',
+)
+OIDC_TOKEN_ENDPOINT = os.getenv(
+    'OIDC_TOKEN_ENDPOINT',
+    'https://accountapi.emoera.com/api/oidc/token',
+)
+OIDC_USERINFO_ENDPOINT = os.getenv(
+    'OIDC_USERINFO_ENDPOINT',
+    'https://accountapi.emoera.com/api/oidc/userinfo',
+)
+OIDC_JWKS_URI = os.getenv(
+    'OIDC_JWKS_URI',
+    'https://accountapi.emoera.com/api/oidc/jwks',
+)
+# 复用原有环境变量名（OAUTH2_CLIENT_ID / OAUTH2_CLIENT_SECRET），
+# 避免破坏现有 .env 部署。
+OIDC_CLIENT_ID = get_required_env('OAUTH2_CLIENT_ID')
+OIDC_CLIENT_SECRET = get_required_env('OAUTH2_CLIENT_SECRET')
+OIDC_SCOPES = os.getenv('OIDC_SCOPES', 'openid profile email')
+OIDC_ID_TOKEN_ALG = os.getenv('OIDC_ID_TOKEN_ALG', 'RS256')
 
 # 修改认证后端配置
 AUTHENTICATION_BACKENDS = (
@@ -212,6 +237,18 @@ LOGIN_REDIRECT_URL = '/profile/'
 # 修改 OAuth 回调设置
 OAUTH_CALLBACK_URL = get_required_env('OAUTH_CALLBACK_URL')
 OFFER_CONFIRM_BASE_URL = os.getenv('OFFER_CONFIRM_BASE_URL', '').rstrip('/')
+
+# 外部认证系统（trust）与邮件模板图片配置
+TRUST_API_URL = os.getenv('TRUST_API_URL', 'https://trust.emoera.com')
+TRUST_SCHEME_ID = int(os.getenv('TRUST_SCHEME_ID', '3'))
+INTERVIEW_EMAIL_IMAGE_URL = os.getenv(
+    'INTERVIEW_EMAIL_IMAGE_URL',
+    'https://eaccount.emoera.com/photos/bishitongzhi.png',
+)
+OFFER_EMAIL_IMAGE_URL = os.getenv(
+    'OFFER_EMAIL_IMAGE_URL',
+    'https://eaccount.emoera.com/photos/welcome.png',
+)
 
 # 添加 CSRF 配置
 CSRF_COOKIE_SECURE = env_bool('CSRF_COOKIE_SECURE', not DEBUG)

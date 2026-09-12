@@ -7,6 +7,7 @@ Django服务器启动脚本
 import os
 import sys
 import logging
+import subprocess
 from pathlib import Path
 
 # 配置日志
@@ -68,9 +69,15 @@ def run_migrations():
     logger.info("🔄 运行数据库迁移...")
     
     try:
-        os.system("python manage.py migrate --noinput")
-        logger.info("✅ 数据库迁移完成")
-        return True
+        result = subprocess.run(
+            [sys.executable, "manage.py", "migrate", "--noinput"],
+            check=False,
+        )
+        if result.returncode == 0:
+            logger.info("✅ 数据库迁移完成")
+            return True
+        logger.error(f"❌ 数据库迁移失败，退出码: {result.returncode}")
+        return False
     except Exception as e:
         logger.error(f"❌ 数据库迁移失败: {e}")
         return False
@@ -80,9 +87,15 @@ def collect_static():
     logger.info("📁 收集静态文件...")
     
     try:
-        os.system("python manage.py collectstatic --noinput")
-        logger.info("✅ 静态文件收集完成")
-        return True
+        result = subprocess.run(
+            [sys.executable, "manage.py", "collectstatic", "--noinput"],
+            check=False,
+        )
+        if result.returncode == 0:
+            logger.info("✅ 静态文件收集完成")
+            return True
+        logger.error(f"❌ 静态文件收集失败，退出码: {result.returncode}")
+        return False
     except Exception as e:
         logger.error(f"❌ 静态文件收集失败: {e}")
         return False
@@ -94,13 +107,18 @@ def start_server():
     try:
         # 使用gunicorn启动（如果可用）
         try:
-            import gunicorn
+            import gunicorn  # noqa: F401
             logger.info("使用gunicorn启动服务器...")
-            os.system("gunicorn eidProject.wsgi:application --bind 0.0.0.0:8000 --workers 3")
+            subprocess.run(
+                ["gunicorn", "eidProject.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"],
+                check=False,
+            )
         except ImportError:
             logger.info("使用Django开发服务器启动...")
-            os.system("python manage.py runserver 0.0.0.0:8000")
-        
+            subprocess.run(
+                [sys.executable, "manage.py", "runserver", "0.0.0.0:8000"],
+                check=False,
+            )
     except KeyboardInterrupt:
         logger.info("🛑 服务器已停止")
     except Exception as e:

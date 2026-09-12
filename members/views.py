@@ -8,15 +8,21 @@ import json
 import logging
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
-from .models import Member, VerificationApplication, ClubApplication
-import uuid
-from urllib.parse import urlencode
+from .models import Member, VerificationApplication, ClubApplication, IDENTITY_TYPE_TO_LEVEL
+from .oidc import (
+    OIDCError,
+    build_authorization_url,
+    exchange_code,
+    generate_pkce,
+    get_userinfo,
+    normalize_userinfo,
+    verify_id_token,
+)
 from django.contrib import messages
 from django.contrib.auth.decorators import permission_required
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
+from django.db import transaction, IntegrityError
 import secrets
 import string
 from django.core.mail import send_mail
@@ -27,123 +33,141 @@ from .notify import notify_club_event, notify_verification_event
 logger = logging.getLogger(__name__)
 
 def oauth_login(request):
-    """初始化 OAuth2 登录流程"""
-    oauth_params = {
-        'client_id': settings.OAUTH2_PROVIDER['CLIENT_ID'],
-        'response_type': 'token',
-        'redirect_uri': settings.OAUTH_CALLBACK_URL,
-        'scope': 'read',
-        'state': str(uuid.uuid4())  # 生成随机 state 用于防止 CSRF
-    }
-    
-    # 将 state 保存在 session 中
-    request.session['oauth_state'] = oauth_params['state']
-    
-    # 构建授权 URL
-    auth_url = f"{settings.OAUTH2_PROVIDER['OAUTH2_SERVER_URL']}/oauth/authorize?{urlencode(oauth_params)}"
+    """初始化 OIDC 登录流程（Authorization Code + PKCE）。"""
+    state = secrets.token_urlsafe(32)
+    nonce = secrets.token_urlsafe(32)
+    code_verifier, code_challenge = generate_pkce()
+
+    # 一次性参数存入 session，回调时消费并校验，防止 CSRF / 重放
+    request.session['oauth_state'] = state
+    request.session['oauth_nonce'] = nonce
+    request.session['oauth_code_verifier'] = code_verifier
+
+    auth_url = build_authorization_url(state, nonce, code_challenge)
     return redirect(auth_url)
 
+
 def oauth_callback(request):
-    return render(request, 'members/callback.html')
+    """OIDC 回调：后端用授权码交换 Token、验签、拉取用户信息并登录。"""
+    error = request.GET.get('error')
+    if error:
+        logger.warning('OIDC 回调返回错误：%s', error)
+        messages.error(request, f'登录失败：{error}')
+        return redirect('login')
 
-@csrf_exempt
-@require_http_methods(["POST"])
-def save_token(request):
-    """处理前端传来的 access_token"""
-    try:
-        data = json.loads(request.body)
-        access_token = data.get('access_token')
-        state = data.get('state')
-        # 验证 state 防止 CSRF
-        if state != request.session.get('oauth_state'):
-            logger.warning("OAuth state validation failed")
-            return JsonResponse({'status': 'error', 'message': 'Invalid state'}, status=400)
-        
-        if access_token:
-            user_info = get_oauth_user_info(access_token)
-            if user_info:
-                user = create_or_update_user(user_info)
-                # 使用 Django 的默认认证后端进行登录
-                auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-                return JsonResponse({'status': 'success', 'redirect_url': '/profile/'})
-            
-        return JsonResponse({'status': 'error', 'message': '获取用户信息失败'}, status=400)
-    except Exception as e:
-        logger.exception("Failed to process OAuth token")
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    code = request.GET.get('code')
+    state = request.GET.get('state')
 
-def get_oauth_user_info(access_token):
-    """获取用户信息"""
-    api_url = f"{settings.OAUTH2_PROVIDER['OAUTH2_API_URL']}/api/oauth2/userinfo"
-    
-    # 将 access_token 作为查询参数而不是 header
-    params = {
-        'client_id': settings.OAUTH2_PROVIDER['CLIENT_ID'],
-        'client_secret': settings.OAUTH2_PROVIDER['CLIENT_SECRET'],
-        'access_token': access_token
-    }
-    
+    # 一次性消费 session 参数，防止重放
+    expected_state = request.session.pop('oauth_state', None)
+    expected_nonce = request.session.pop('oauth_nonce', None)
+    code_verifier = request.session.pop('oauth_code_verifier', None)
+
+    if not code:
+        messages.error(request, '登录失败：未收到授权码')
+        return redirect('login')
+
+    if not state or state != expected_state:
+        logger.warning('OIDC state 校验失败')
+        messages.error(request, '登录失败：状态校验未通过，请重试')
+        return redirect('login')
+
+    if not code_verifier or not expected_nonce:
+        messages.error(request, '登录失败：会话已过期，请重新登录')
+        return redirect('login')
+
     try:
-        response = requests.get(api_url, params=params)
-        
-        if response.status_code == 200:
-            result = response.json()
-            if result.get('code') == 200:  # 检查 API 响应状态
-                return result.get('data')
-            logger.warning("OAuth userinfo API returned an error: %s", result.get('message'))
-    except Exception as e:
-        logger.exception("Failed to fetch OAuth user info")
-    return None
+        # 1. 用授权码 + code_verifier 交换 Token
+        token_data = exchange_code(code, code_verifier)
+        id_token = token_data.get('id_token')
+        access_token = token_data.get('access_token')
+        if not id_token or not access_token:
+            raise OIDCError('Token 响应缺少 id_token 或 access_token')
+
+        # 2. 验证 RS256 ID Token
+        id_claims = verify_id_token(id_token, expected_nonce)
+
+        # 3. 获取 UserInfo，并要求 sub 与 ID Token 一致
+        userinfo = get_userinfo(access_token)
+        if not userinfo.get('sub') or userinfo.get('sub') != id_claims.get('sub'):
+            raise OIDCError('UserInfo 的 sub 与 ID Token 不一致')
+
+        # 4. 规范化字段并创建/更新本地用户
+        user_info = normalize_userinfo(userinfo)
+        user = create_or_update_user(user_info)
+
+        # 5. 建立本地登录会话
+        auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        return redirect('member_profile')
+    except OIDCError as e:
+        logger.warning('OIDC 登录失败：%s', e)
+        messages.error(request, f'登录失败：{e}')
+        return redirect('login')
+    except Exception:
+        logger.exception('OIDC 登录发生未预期错误')
+        messages.error(request, '登录失败，请稍后重试')
+        return redirect('login')
+
 
 def create_or_update_user(user_info):
-    """创建或更新本地用户"""
-    oauth_id = user_info['id']
+    """创建或更新本地用户。
+
+    以 oauth_id（OIDC sub）为唯一身份键，get_or_create + 事务避免并发回调时的
+    IntegrityError。绝不按 username 把新 oauth_id 挂到已有账户上，防止账号接管。
+    """
+    oauth_id = str(user_info['id'])
     username = user_info['username']
-    
+
     try:
-        # 首先尝试通过 oauth_id 查找用户
-        member = Member.objects.get(oauth_id=oauth_id)
+        member = Member.objects.select_related('user').get(oauth_id=oauth_id)
         user = member.user
     except Member.DoesNotExist:
+        # 新登录身份：先创建 User，再在同一事务里创建 Member。
+        # 若并发回调撞 oauth_id 唯一约束，回读已存在的记录即可。
         try:
-            # 如果找不到 member，尝试通过用户名查找用户
-            user = User.objects.get(username=username)
-            # 如果找到用户，为其创建 member
-            member = Member.objects.create(
-                user=user,
-                oauth_id=oauth_id,
-                avatar=user_info.get('avatar') or '',
-                bio=user_info.get('bio') or ''
-            )
-        except User.DoesNotExist:
-            # 如果用户也不存在，才创建新用户
-            # 生成一个随机密码
-            alphabet = string.ascii_letters + string.digits + string.punctuation
-            password = ''.join(secrets.choice(alphabet) for i in range(16))
-            
-            user = User.objects.create_user(
-                username=username,
-                email=user_info.get('email', ''),
-                password=password
-            )
-            # 创建新的 Member
-            member = Member.objects.create(
-                user=user,
-                oauth_id=oauth_id,
-                avatar=user_info.get('avatar') or '',
-                bio=user_info.get('bio') or ''
-            )
-    
+            with transaction.atomic():
+                user = _create_user_with_unique_username(
+                    username=username,
+                    email=user_info.get('email', ''),
+                )
+                member = Member.objects.create(
+                    user=user,
+                    oauth_id=oauth_id,
+                    avatar=user_info.get('avatar') or '',
+                    bio=user_info.get('bio') or '',
+                )
+        except IntegrityError:
+            member = Member.objects.select_related('user').get(oauth_id=oauth_id)
+            user = member.user
+
     # 更新用户信息
     user.email = user_info.get('email', '')
     user.save()
-    
+
     # 更新 Member 信息
     member.avatar = user_info.get('avatar') or ''
     member.bio = user_info.get('bio') or ''
     member.save()
-    
+
     return user
+
+
+def _create_user_with_unique_username(username, email=''):
+    """创建用户，用户名冲突时追加短随机后缀（仅在新建时发生，不影响已有账户）。"""
+    alphabet = string.ascii_letters + string.digits + string.punctuation
+    password = ''.join(secrets.choice(alphabet) for _ in range(16))
+
+    candidate = username
+    for _ in range(5):
+        if not User.objects.filter(username=candidate).exists():
+            return User.objects.create_user(
+                username=candidate, email=email, password=password
+            )
+        candidate = f'{username}_{secrets.token_hex(2)}'
+    # 兜底：直接用随机用户名
+    return User.objects.create_user(
+        username=f'user_{secrets.token_hex(4)}', email=email, password=password
+    )
 
 @login_required
 def member_profile(request):
@@ -251,15 +275,7 @@ def approve_application(request, application_id):
         # 更新用户身份
         member = application.member
         # 根据身份类型设置等级
-        identity_levels = {
-            'active': 1,    # 活跃成员
-            'core': 2,      # 核心成员
-            'key': 3,       # 核心贡献
-            'management': 4, # 管理层
-            'outstanding': 5, # 卓越贡献
-            'smart_car': 6 # 智能车团队
-        }
-        member.identity_level = identity_levels.get(application.identity_type, 0)
+        member.identity_level = IDENTITY_TYPE_TO_LEVEL.get(application.identity_type, 0)
         member.identity_title = application.identity_title
         member.save()
 
@@ -315,15 +331,7 @@ def identity_card(request):
         else:
             cards = []
             for app in approved_applications:
-                identity_levels = {
-                    'active': 1,
-                    'core': 2,
-                    'key': 3,
-                    'management': 4,
-                    'outstanding': 5,
-                    'smart_car': 6
-                }
-                level = identity_levels.get(app.identity_type, 0)
+                level = IDENTITY_TYPE_TO_LEVEL.get(app.identity_type, 0)
                 cards.append({
                     'image': f'https://esd-id.emoera.com/images/level_{level}.png',
                     'title': app.get_identity_type_display(),
@@ -388,10 +396,10 @@ def check_external_verification(request):
     try:
         member = Member.objects.get(user=request.user)
         oauth_id = str(member.oauth_id)
-        scheme_id = 3  # 固定为3
-        
+        scheme_id = settings.TRUST_SCHEME_ID
+
         # 调用外部API检查认证状态
-        api_url = "https://trust.emoera.com/api/verification/status"
+        api_url = f"{settings.TRUST_API_URL}/api/verification/status"
         params = {
             'oauthId': oauth_id,
             'schemeId': scheme_id
@@ -473,7 +481,6 @@ def club_application_page(request):
 
 @login_required
 @require_http_methods(["POST"])
-@csrf_exempt
 def submit_club_application(request):
     """提交社团报名申请"""
     try:
@@ -584,13 +591,16 @@ def send_interview_notification(request, application_id):
     if request.method == 'POST':
         application = get_object_or_404(ClubApplication, id=application_id)
         
+        # 先发送笔试通知邮件，成功后再更新状态，避免"状态已改但邮件没发出去"
+        success = send_interview_email(application.member.user.email, application.real_name)
+        if not success:
+            messages.error(request, f'向 {application.real_name} 发送笔试通知邮件失败，状态未变更，请检查邮件配置后重试')
+            return redirect('review_club_applications')
+
         # 更新状态
         application.status = 'interview_sent'
         application.interview_sent_at = timezone.now()
         application.save()
-        
-        # 发送笔试通知邮件
-        send_interview_email(application.member.user.email, application.real_name)
 
         notify_club_event(
             event='已发送笔试通知',
@@ -632,13 +642,16 @@ def send_offer_notification(request, application_id):
     if request.method == 'POST':
         application = get_object_or_404(ClubApplication, id=application_id)
         
+        # 先发送录取通知邮件，成功后再更新状态，避免"状态已改但邮件没发出去"
+        success = send_offer_email(application.member.user.email, application.real_name, str(application.offer_uuid))
+        if not success:
+            messages.error(request, f'向 {application.real_name} 发送录取通知邮件失败，状态未变更，请检查邮件配置后重试')
+            return redirect('review_club_applications')
+
         # 更新状态
         application.status = 'offer_sent'
         application.offer_sent_at = timezone.now()
         application.save()
-        
-        # 发送录取通知邮件
-        send_offer_email(application.member.user.email, application.real_name, str(application.offer_uuid))
 
         notify_club_event(
             event='已发送录取通知',
@@ -674,7 +687,6 @@ def resend_offer_notification(request, application_id):
     return redirect('review_club_applications')
 
 
-@csrf_exempt
 def confirm_offer(request, offer_uuid):
     """确认Offer页面"""
     try:
@@ -716,7 +728,7 @@ def send_interview_email(to_email, to_name):
         # HTML 邮件内容（基于提供的PHP示例）
         html_message = f'''
         <p>同学您好，<br>感谢您参与E时代的笔试。为了及时获取最新消息，请关注我们的QQ交流群。</p>
-        <img src="https://eaccount.emoera.com/photos/bishitongzhi.png" alt="E时代" style="width:500px;height:auto;">
+        <img src="{settings.INTERVIEW_EMAIL_IMAGE_URL}" alt="E时代" style="width:500px;height:auto;">
         <br><br>
         <p>E时代团队向您表达由衷的祝贺，祝您在本次笔试中取得佳绩。我们也期待更多优秀的同学与我们一起成长，共创辉煌。<br>祝顺利通过！<br>E时代研发中心</p>
         '''
@@ -764,7 +776,7 @@ def send_offer_email(to_email, to_name, offer_uuid):
         <br><br>
         <p>期待与您一同开启新的征程，互相支持，共同成长。</p>
         <a href='{confirm_url}'>
-            <img src='https://eaccount.emoera.com/photos/welcome.png' alt='E时代' style='width: auto; height: auto;'>
+            <img src='{settings.OFFER_EMAIL_IMAGE_URL}' alt='E时代' style='width: auto; height: auto;'>
         </a>
         <br><br>
         <p>再次感谢您的加入<br>E时代研发中心</p>

@@ -280,7 +280,10 @@ async function acceptOffer() {
     try {
         const response = await fetch(window.location.href, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
         });
         const data = await response.json();
         if (!response.ok || !['success', 'already_confirmed'].includes(data.status)) {

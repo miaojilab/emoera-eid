@@ -26,7 +26,6 @@ urlpatterns = [
     path('logout/', views.logout, name='logout'),
     path('oauth/callback/', views.oauth_callback, name='oauth_callback'),
     path('profile/', views.member_profile, name='member_profile'),
-    path('api/save-token/', views.save_token, name='save_token'),
     path('verify/', views.apply_verification, name='apply_verification'),
     path('verify/review/', views.review_applications, name='review_applications'),
     path('verify/edit/<int:application_id>/', views.edit_application, name='edit_application'),
