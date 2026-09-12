@@ -42,14 +42,8 @@ class Command(BaseCommand):
                 user.user_permissions.add(permission)
                 added_permissions.append(name)
         
-        # 设置为超级用户（可选）
-        if not user.is_superuser:
-            user.is_superuser = True
-            user.is_staff = True
-            user.save()
-            self.stdout.write(
-                self.style.SUCCESS(f'用户 "{username}" 已设置为超级用户')
-            )
+        # 不在此命令中提权为超级用户。如需访问 Django Admin 后台，
+        # 请由系统管理员另行配置 staff 权限（python manage.py createsuperuser）。
         
         if added_permissions:
             self.stdout.write(

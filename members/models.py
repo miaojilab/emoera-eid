@@ -2,6 +2,16 @@ from django.db import models
 from django.contrib.auth.models import User
 import uuid
 
+# identity_type（VerificationApplication.IDENTITY_CHOICES 的 key）→ Member.identity_level
+IDENTITY_TYPE_TO_LEVEL = {
+    'active': 1,      # 活跃成员
+    'core': 2,        # 核心成员
+    'key': 3,         # 核心贡献
+    'management': 4,  # 管理层
+    'outstanding': 5, # 卓越贡献
+    'smart_car': 6,   # 智能车团队
+}
+
 class Member(models.Model):
     IDENTITY_LEVELS = [
         (0, '未认证'),
@@ -14,7 +24,8 @@ class Member(models.Model):
     ]
     
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    oauth_id = models.IntegerField(unique=True)
+    # OIDC sub 为字符串（可能是 UUID/长数字串），用 CharField 兼容；旧的纯数字值可无损存储
+    oauth_id = models.CharField(max_length=64, unique=True)
     phone = models.CharField(max_length=20, blank=True, default='')
     avatar = models.URLField(max_length=255, blank=True, default='')
     bio = models.TextField(blank=True, default='')
