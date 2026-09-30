@@ -10,12 +10,14 @@ if not settings.configured:
 from django.test import override_settings
 import requests
 from members.notification_payload import build_event_payload
+from members.notification_payload import build_brief_text
 from members.notify import notify_club_event, notify_verification_event, notify_text
 
 
 class NotificationTests(unittest.TestCase):
     def setUp(self):
         config = override_settings(WECOM_WEBHOOK_URL='', FEISHU_WEBHOOK_URL='', NOTIFY_WEBHOOK_URLS='',
+                                   WECOM_BRIEF_WEBHOOK_URL='',
                                    WECOM_NOTIFY_FORMAT='card', FEISHU_NOTIFY_FORMAT='card',
                                    NOTIFY_PUBLIC_BASE_URL='https://neweid.emoera.com')
         config.enable()
@@ -91,6 +93,40 @@ class NotificationTests(unittest.TestCase):
     def test_unconfigured_does_not_send(self):
         self.assertEqual(notify_club_event(event='测试', application_id=1, username='用户'), [])
         self.post.assert_not_called()
+
+    def test_large_group_brief_is_one_line_safe_and_isolated(self):
+        self.assertEqual(
+            build_brief_text(kind='verification', event='认证已拒绝\n不要展开',
+                             application_id='42', status='rejected'),
+            '【E时代 ID】身份认证｜认证已拒绝 不要展开｜申请#42｜已拒绝'
+        )
+        with override_settings(WECOM_WEBHOOK_URL='https://qyapi.weixin.qq.com/original-placeholder',
+                               WECOM_BRIEF_WEBHOOK_URL='https://qyapi.weixin.qq.com/brief-placeholder'):
+            self.post.side_effect = [Mock(status_code=500, json=lambda: {}),
+                                     Mock(status_code=200, json=lambda: {'errcode': 0})]
+            result = notify_verification_event(event='新身份认证申请', application_id=42,
+                                               username='secret-user@example.org', status='pending')
+        self.assertEqual(result, [False])
+        self.assertEqual(self.post.call_count, 2)
+        brief_payload = self.post.call_args_list[1].kwargs['json']
+        brief = brief_payload['text']['content']
+        self.assertEqual(brief_payload['msgtype'], 'text')
+        self.assertEqual(brief.count('\n'), 0)
+        self.assertIn('新身份认证申请', brief)
+        self.assertIn('待审核', brief)
+        self.assertNotIn('secret-user@example.org', brief)
+        self.assertNotIn('http', brief)
+
+    def test_large_group_brief_covers_approval_rejection_and_pause_states(self):
+        with override_settings(WECOM_BRIEF_WEBHOOK_URL='https://qyapi.weixin.qq.com/brief-placeholder'):
+            for status, label in [('approved', '已通过'), ('rejected', '已拒绝'), ('paused', '已暂停')]:
+                self.post.reset_mock()
+                self.post.return_value = Mock(status_code=200, json=lambda: {'errcode': 0})
+                notify_club_event(event='状态更新', application_id=7,
+                                  username='隐藏用户', status=status)
+                content = self.post.call_args.kwargs['json']['text']['content']
+                self.assertIn(label, content)
+                self.assertNotIn('隐藏用户', content)
 
     @override_settings(WECOM_WEBHOOK_URL='https://qyapi.weixin.qq.com/secret-placeholder')
     def test_timeout_rejection_and_redacted_logs(self):

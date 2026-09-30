@@ -238,3 +238,5 @@ EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '60'))
 WECOM_WEBHOOK_URL = os.getenv('WECOM_WEBHOOK_URL', '')
 FEISHU_WEBHOOK_URL = os.getenv('FEISHU_WEBHOOK_URL', '')
 NOTIFY_WEBHOOK_URLS = os.getenv('NOTIFY_WEBHOOK_URLS', '')
+# Separate WeCom-only large-group one-line brief targets.
+WECOM_BRIEF_WEBHOOK_URL = os.getenv('WECOM_BRIEF_WEBHOOK_URL', '')

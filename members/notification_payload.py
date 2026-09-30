@@ -11,7 +11,8 @@ from django.utils import timezone
 STATUS = {
     'pending': '待审核', 'approved': '已通过', 'rejected': '已拒绝',
     'interview_sent': '笔试通知已发送', 'offer_sent': '录取通知已发送',
-    'offer_confirmed': 'Offer 已确认',
+    'offer_confirmed': 'Offer 已确认', 'paused': '已暂停',
+    'suspended': '已暂停', 'inactive': '已暂停',
 }
 
 
@@ -26,6 +27,15 @@ def short(value, limit=80):
 
 def escape_markdown(value):
     return re.sub(r'([\\`*_{}\[\]()#!|])', r'\\\1', html.escape(value, quote=False))
+
+
+def build_brief_text(*, kind, event, application_id, status):
+    """Build a one-line, low-sensitivity summary for the separate large group."""
+    kind_label = '身份认证' if kind == 'verification' else '社团报名'
+    event_label = short(event or '申请状态更新', 28)
+    status_label = STATUS.get(status, short(status or '状态更新', 20))
+    application_label = short(application_id, 32)
+    return f'【E时代 ID】{kind_label}｜{event_label}｜申请#{application_label}｜{status_label}'
 
 
 def public_origin():

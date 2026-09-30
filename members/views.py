@@ -22,7 +22,8 @@ import string
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
-from .notify import notify_club_event, notify_verification_event
+from .notify import (notify_club_event, notify_club_event_async,
+                     notify_verification_event, notify_verification_event_async)
 
 logger = logging.getLogger(__name__)
 
@@ -192,7 +193,7 @@ def apply_verification(request):
             identity_type=request.POST.get('identity_type')
         )
 
-        notify_verification_event(
+        notify_verification_event_async(
             event='新身份认证申请',
             application_id=application.id,
             username=request.user.username,
@@ -263,7 +264,7 @@ def approve_application(request, application_id):
         member.identity_title = application.identity_title
         member.save()
 
-        notify_verification_event(
+        notify_verification_event_async(
             event='身份认证已通过',
             application_id=application.id,
             username=application.member.user.username,
@@ -282,7 +283,7 @@ def reject_application(request, application_id):
         application.status = 'rejected'
         application.save()
 
-        notify_verification_event(
+        notify_verification_event_async(
             event='身份认证已拒绝',
             application_id=application.id,
             username=application.member.user.username,
@@ -504,7 +505,7 @@ def submit_club_application(request):
             external_verified=data.get('external_verified', False)
         )
 
-        notify_club_event(
+        notify_club_event_async(
             event='新社团报名申请',
             application_id=application.id,
             username=request.user.username,
@@ -592,7 +593,7 @@ def send_interview_notification(request, application_id):
         # 发送笔试通知邮件
         send_interview_email(application.member.user.email, application.real_name)
 
-        notify_club_event(
+        notify_club_event_async(
             event='已发送笔试通知',
             application_id=application.id,
             username=application.member.user.username,
@@ -640,7 +641,7 @@ def send_offer_notification(request, application_id):
         # 发送录取通知邮件
         send_offer_email(application.member.user.email, application.real_name, str(application.offer_uuid))
 
-        notify_club_event(
+        notify_club_event_async(
             event='已发送录取通知',
             application_id=application.id,
             username=application.member.user.username,
@@ -685,7 +686,7 @@ def confirm_offer(request, offer_uuid):
                 application.status = 'offer_confirmed'
                 application.offer_confirmed_at = timezone.now()
                 application.save()
-                notify_club_event(
+                notify_club_event_async(
                     event='Offer 已确认',
                     application_id=application.id,
                     username=application.member.user.username,
@@ -806,7 +807,7 @@ def reject_club_application(request, application_id):
         application = get_object_or_404(ClubApplication, id=application_id)
         application.status = 'rejected'
         application.save()
-        notify_club_event(
+        notify_club_event_async(
             event='社团申请已拒绝',
             application_id=application.id,
             username=application.member.user.username,

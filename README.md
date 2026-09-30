@@ -79,6 +79,7 @@ cp .env.example .env
 - `WECOM_WEBHOOK_URL`
 - `FEISHU_WEBHOOK_URL`
 - `NOTIFY_WEBHOOK_URLS`（可选，逗号分隔多个 webhook）
+- `WECOM_BRIEF_WEBHOOK_URL`（可选，独立企微大群简讯目标；可逗号分隔多个 webhook）
 
 > 不要提交 `.env` 或任何包含真实密钥、数据库密码、OAuth client secret、SMTP 密码、群机器人 webhook 的文件。通知消息仅包含事件类型、申请 ID 和用户名，不包含真实姓名、学号等敏感字段。
 
@@ -144,7 +145,7 @@ start_server.py    # 启动辅助脚本
 
 ## 认证与社团通知格式
 
-身份认证及社团报名事件默认发送企业微信模板卡片或飞书消息卡片。企微可通过 `WECOM_NOTIFY_FORMAT=markdown` 或 `text` 切换格式；飞书可通过 `FEISHU_NOTIFY_FORMAT=text` 恢复纯文字。未配置机器人时不发送消息。
+身份认证及社团报名事件默认发送企业微信模板卡片或飞书消息卡片。企微可通过 `WECOM_NOTIFY_FORMAT=markdown` 或 `text` 切换格式；飞书可通过 `FEISHU_NOTIFY_FORMAT=text` 恢复纯文字。未配置机器人时不发送消息。配置 `WECOM_BRIEF_WEBHOOK_URL` 后，会向独立企微大群发送一行简讯（申请类型、事件、申请 ID、状态），不包含邮箱、学号、拒绝详情或可执行审核链接；简讯失败不影响原群卡片。
 
 `NOTIFY_PUBLIC_BASE_URL` 默认为 `https://neweid.emoera.com`，用于生成品牌 Logo 和审核页面链接。身份认证进入身份审核列表，社团事件进入社团审核列表并选中对应状态；仍需登录及原有分项审核权限。不会在卡片中直接通过、拒绝或确认 Offer。卡片不包含真实姓名、学号、邮箱或 Offer 确认码。通用 `notify_text` / `notify_event` 保持纯文本行为。
 

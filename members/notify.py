@@ -6,11 +6,13 @@ Supported settings / env:
   WECOM_WEBHOOK_URL
   FEISHU_WEBHOOK_URL
   NOTIFY_WEBHOOK_URLS  (comma-separated; type inferred from URL)
+  WECOM_BRIEF_WEBHOOK_URL  (comma-separated WeCom-only large-group targets)
 """
 
 from __future__ import annotations
 
 import logging
+import threading
 from typing import Iterable
 from urllib.parse import urlparse
 
@@ -18,7 +20,7 @@ import requests
 from django.conf import settings
 from django.utils import timezone
 
-from .notification_payload import build_event_payload
+from .notification_payload import build_brief_text, build_event_payload
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +51,20 @@ def _collect_targets() -> list[dict]:
     for url in _split_urls(getattr(settings, 'NOTIFY_WEBHOOK_URLS', '') or ''):
         targets.append({'url': url, 'provider': _detect_provider(url)})
 
+    seen: set[str] = set()
+    unique: list[dict] = []
+    for target in targets:
+        if target['url'] in seen:
+            continue
+        seen.add(target['url'])
+        unique.append(target)
+    return unique
+
+
+def _collect_brief_targets() -> list[dict]:
+    """Collect only the independently configured WeCom brief targets."""
+    targets = [{'url': url, 'provider': 'wecom'}
+               for url in _split_urls(getattr(settings, 'WECOM_BRIEF_WEBHOOK_URL', '') or '')]
     seen: set[str] = set()
     unique: list[dict] = []
     for target in targets:
@@ -123,8 +139,32 @@ def notify_event(title: str, lines: Iterable[str] | None = None) -> list[bool]:
 
 
 def _notify_application(**event) -> list[bool]:
-    return [_post_webhook(target, build_event_payload(target['provider'], **event))
-            for target in _collect_targets()]
+    # Keep the existing full card dispatch and its return shape for callers.
+    full_results = [_post_webhook(target, build_event_payload(target['provider'], **event))
+                    for target in _collect_targets()]
+    # Brief delivery is deliberately isolated: a large-group failure cannot
+    # change the original notification result or interrupt the request.
+    brief = build_brief_text(kind=event['kind'], event=event.get('event'),
+                             application_id=event.get('application_id'), status=event.get('status'))
+    for target in _collect_brief_targets():
+        _post_webhook(target, _build_payload(target['provider'], brief))
+    return full_results
+
+
+def _run_background(fn, *args, **kwargs):
+    try:
+        fn(*args, **kwargs)
+    except Exception:
+        # Notification failures must never affect the business request and the
+        # exception category is sufficient for diagnostics without user data.
+        logger.error('background notification failed: %s', 'unexpected_error')
+
+
+def _notify_async(fn, *args, **kwargs):
+    thread = threading.Thread(target=_run_background, args=(fn, *args), kwargs=kwargs,
+                              name='group-notification', daemon=True)
+    thread.start()
+    return thread
 
 
 def notify_verification_event(*, event: str, application_id, username: str, identity_type: str = '', status: str = '') -> list[bool]:
@@ -136,3 +176,13 @@ def notify_club_event(*, event: str, application_id, username: str, status: str 
     # Omit real names, email, student identifiers and Offer confirmation tokens.
     return _notify_application(kind='club', event=event, application_id=application_id,
                                username=username, status=status)
+
+
+def notify_verification_event_async(**event):
+    """Dispatch a verification notification after the request returns."""
+    return _notify_async(notify_verification_event, **event)
+
+
+def notify_club_event_async(**event):
+    """Dispatch a club notification after the request returns."""
+    return _notify_async(notify_club_event, **event)
