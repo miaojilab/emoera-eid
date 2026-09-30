@@ -48,7 +48,7 @@ pip install -r requirements.txt
 
 ### 3. 配置环境变量
 
-复制示例文件：
+[`.env.example`](./.env.example) 提供带中文注释的完整配置示例，默认用于本地开发。复制后按注释修改 `.env`：
 
 ```bash
 copy .env.example .env
@@ -60,7 +60,13 @@ macOS / Linux:
 cp .env.example .env
 ```
 
-至少需要配置：
+项目会自动加载根目录的 `.env`，已设置的系统环境变量优先。启动前先生成一个独立的 Django 密钥：
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(64))"
+```
+
+将输出填入 `DJANGO_SECRET_KEY`，再配置以下变量：
 
 - `DJANGO_SECRET_KEY`
 - `DJANGO_ALLOWED_HOSTS`
@@ -68,11 +74,15 @@ cp .env.example .env
 - `DB_USER`
 - `DB_PASSWORD`
 - `DB_HOST`
+- `OAUTH2_SERVER_URL`
+- `OAUTH2_API_URL`
 - `OAUTH2_CLIENT_ID`
 - `OAUTH2_CLIENT_SECRET`
 - `OAUTH_CALLBACK_URL`
 
-如果需要发送邮件，还需要配置 `EMAIL_*` 相关变量。
+`DB_*` 必须与实际创建的 MySQL 数据库和账号一致。OAuth 的示例域名及凭据需要替换，才能完成登录；`OAUTH_CALLBACK_URL` 必须与 OAuth 服务端登记的回调地址完全一致。本地请统一使用 `http://localhost:8000` 访问，避免与 `127.0.0.1` 混用导致登录会话丢失。
+
+本地默认使用 `django.core.mail.backends.console.EmailBackend`，邮件只打印到终端。需要真实发信时，改用 `django.core.mail.backends.smtp.EmailBackend`，并填写 SMTP 配置及发件人地址。常见组合为端口 `587` + `EMAIL_USE_TLS=true`，或端口 `465` + `EMAIL_USE_SSL=true`，两项不能同时开启。`OFFER_CONFIRM_BASE_URL` 应填写收件人可访问的站点根地址。
 
 如果需要群机器人通知，可配置：
 
@@ -80,6 +90,8 @@ cp .env.example .env
 - `FEISHU_WEBHOOK_URL`
 - `NOTIFY_WEBHOOK_URLS`（可选，逗号分隔多个 webhook）
 - `WECOM_BRIEF_WEBHOOK_URL`（可选，独立企微大群简讯目标；可逗号分隔多个 webhook）
+
+这些 webhook 默认留空，不发送群通知。启用后，将 `NOTIFY_PUBLIC_BASE_URL` 从本地地址改为群成员可访问的 HTTPS 站点地址，用于通知卡片中的 Logo 和审核链接。
 
 > 不要提交 `.env` 或任何包含真实密钥、数据库密码、OAuth client secret、SMTP 密码、群机器人 webhook 的文件。通知消息仅包含事件类型、申请 ID 和用户名，不包含真实姓名、学号等敏感字段。
 
