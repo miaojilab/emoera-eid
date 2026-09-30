@@ -60,6 +60,7 @@ class VerificationApplication(models.Model):
         default='pending',
         verbose_name='审核状态'
     )
+    rejection_reason = models.TextField(blank=True, default='', verbose_name='拒绝原因')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -89,6 +90,7 @@ class ClubApplication(models.Model):
         default='pending',
         verbose_name='申请状态'
     )
+    rejection_reason = models.TextField(blank=True, default='', verbose_name='拒绝原因')
     # 外部认证状态检查结果
     external_verification_status = models.CharField(max_length=50, blank=True, verbose_name='外部认证状态')
     external_verified = models.BooleanField(default=False, verbose_name='外部认证通过')
@@ -113,4 +115,4 @@ class ClubApplication(models.Model):
         ]
     
     def __str__(self):
-        return f"{self.real_name} - {self.get_status_display()}" 
+        return f"{self.real_name} - {self.get_status_display()}"

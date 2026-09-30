@@ -49,6 +49,22 @@ class NotificationTests(unittest.TestCase):
                     self.assertLessEqual(len(card['horizontal_content_list']), 6)
                     self.assertTrue(card['source']['icon_url'].endswith('/static/images/e-era-logo.png'))
 
+    def test_internal_card_prioritizes_name_and_rejection_reason(self):
+        card = self.payload(applicant_name='张三', reason='请补充清晰的学生证照片')['template_card']
+        fields = {item['keyname']: item['value'] for item in card['horizontal_content_list']}
+        self.assertEqual(fields['申请人姓名'], '张三')
+        self.assertEqual(fields['账号'], '测试用户')
+        self.assertIn('身份认证 · 核心成员', fields['申请类型'])
+        self.assertEqual(fields['拒绝原因'], '请补充清晰的学生证照片')
+        self.assertIn('请补充清晰的学生证照片', card['sub_title_text'])
+
+        feishu = self.payload(provider='feishu', applicant_name='张三', reason='资料不完整')['card']
+        serialized = json.dumps(feishu, ensure_ascii=False)
+        self.assertIn('申请人姓名', serialized)
+        self.assertIn('张三', serialized)
+        self.assertIn('拒绝原因', serialized)
+        self.assertIn('资料不完整', serialized)
+
     def test_feishu_uses_plain_text_and_status_colors(self):
         for status, color in [('pending','blue'), ('rejected','red'), ('approved','green'), ('offer_confirmed','green')]:
             card = self.payload(provider='feishu', status=status, username='<at id=all></at>')['card']

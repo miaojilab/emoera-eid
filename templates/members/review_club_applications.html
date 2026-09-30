@@ -315,6 +315,9 @@ async function rejectApp(id, name) {
         title: '拒绝申请',
         text: `确定要拒绝 ${name} 的申请吗？此操作不可撤销。`,
         icon: 'warning',
+        input: 'textarea',
+        inputLabel: '拒绝原因（可选，通知会同步显示）',
+        inputPlaceholder: '请输入拒绝原因',
         showCancelButton: true,
         confirmButtonText: '确定拒绝',
         cancelButtonText: '取消'
@@ -324,7 +327,11 @@ async function rejectApp(id, name) {
         try {
             const response = await fetch(`/club/admin/reject/${id}/`, {
                 method: 'POST',
-                headers: { 'X-CSRFToken': csrfToken }
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+                },
+                body: new URLSearchParams({ reason: result.value || '' })
             });
             
             if (response.ok) {

@@ -197,6 +197,7 @@ def apply_verification(request):
             event='新身份认证申请',
             application_id=application.id,
             username=request.user.username,
+            applicant_name=application.real_name,
             identity_type=application.get_identity_type_display(),
             status=application.status,
         )
@@ -247,6 +248,7 @@ def approve_application(request, application_id):
     if request.method == 'POST':
         application = get_object_or_404(VerificationApplication, id=application_id)
         application.status = 'approved'
+        application.rejection_reason = ''
         application.save()
         
         # 更新用户身份
@@ -268,6 +270,7 @@ def approve_application(request, application_id):
             event='身份认证已通过',
             application_id=application.id,
             username=application.member.user.username,
+            applicant_name=application.real_name,
             identity_type=application.get_identity_type_display(),
             status=application.status,
         )
@@ -280,15 +283,19 @@ def reject_application(request, application_id):
     """拒绝申请"""
     if request.method == 'POST':
         application = get_object_or_404(VerificationApplication, id=application_id)
+        reason = request.POST.get('reason', '').strip()
         application.status = 'rejected'
+        application.rejection_reason = reason
         application.save()
 
         notify_verification_event_async(
             event='身份认证已拒绝',
             application_id=application.id,
             username=application.member.user.username,
+            applicant_name=application.real_name,
             identity_type=application.get_identity_type_display(),
             status=application.status,
+            reason=reason,
         )
         messages.success(request, '已拒绝申请')
     return redirect('review_applications') 
@@ -509,6 +516,7 @@ def submit_club_application(request):
             event='新社团报名申请',
             application_id=application.id,
             username=request.user.username,
+            applicant_name=application.real_name,
             status=application.status,
         )
         
@@ -597,6 +605,7 @@ def send_interview_notification(request, application_id):
             event='已发送笔试通知',
             application_id=application.id,
             username=application.member.user.username,
+            applicant_name=application.real_name,
             status=application.status,
         )
         
@@ -645,6 +654,7 @@ def send_offer_notification(request, application_id):
             event='已发送录取通知',
             application_id=application.id,
             username=application.member.user.username,
+            applicant_name=application.real_name,
             status=application.status,
         )
         
@@ -690,6 +700,7 @@ def confirm_offer(request, offer_uuid):
                     event='Offer 已确认',
                     application_id=application.id,
                     username=application.member.user.username,
+                    applicant_name=application.real_name,
                     status=application.status,
                 )
                 return JsonResponse({'status': 'success'})
@@ -805,14 +816,18 @@ def reject_club_application(request, application_id):
     """拒绝社团申请"""
     if request.method == 'POST':
         application = get_object_or_404(ClubApplication, id=application_id)
+        reason = request.POST.get('reason', '').strip()
         application.status = 'rejected'
+        application.rejection_reason = reason
         application.save()
         notify_club_event_async(
             event='社团申请已拒绝',
             application_id=application.id,
             username=application.member.user.username,
+            applicant_name=application.real_name,
             status=application.status,
+            reason=reason,
         )
         messages.success(request, f'已拒绝 {application.real_name} 的申请')
     
-    return redirect('review_club_applications') 
+    return redirect('review_club_applications')

@@ -49,21 +49,28 @@ def public_origin():
 
 
 def build_event_payload(provider, *, kind, event, application_id, username,
-                        identity_type='', status='', now=None):
+                        applicant_name='', identity_type='', status='', reason='', now=None):
     origin = public_origin()
     title = short(event, 26)
     label = STATUS.get(status, short(status or '状态更新', 20))
-    fields = [('申请类型', '身份认证' if kind == 'verification' else '社团报名'),
-              ('申请编号', short(application_id)), ('申请人', short(username)),
-              ('当前状态', label)]
+    type_label = '身份认证'
     if kind == 'verification' and identity_type:
-        fields.append(('身份类型', short(identity_type)))
+        type_label = f'身份认证 · {short(identity_type, 24)}'
+    elif kind != 'verification':
+        type_label = '社团报名'
+    fields = [('申请类型', type_label),
+              ('申请人姓名', short(applicant_name or username)),
+              ('账号', short(username)), ('申请编号', short(application_id)),
+              ('当前状态', label)]
+    if reason:
+        fields.append(('拒绝原因', short(reason, 100)))
     # Read-only review pages; never link directly to approval or Offer actions.
     path = '/verify/review/' if kind == 'verification' else '/club/admin/'
     url = origin + path + '?' + urlencode({'status': status if status in STATUS else 'all'})
     action = '前往审核' if status == 'pending' else '查看记录'
     stamp = (now or timezone.now()).astimezone(ZoneInfo('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S')
     time_text = f'时间：{stamp}（北京时间）'
+    reason_text = f'拒绝原因：{short(reason, 160)}' if reason else ''
     text = '\n'.join(['【E时代 ID】', title, *[f'{k}：{v}' for k, v in fields], time_text, f'{action}：{url}'])
     if provider == 'wecom':
         format_name = option('WECOM_NOTIFY_FORMAT', 'card')
@@ -78,7 +85,7 @@ def build_event_payload(provider, *, kind, event, application_id, username,
             'card_type': 'text_notice',
             'source': {'icon_url': origin + '/static/images/e-era-logo.png', 'desc': 'E时代 ID', 'desc_color': 1},
             'main_title': {'title': title, 'desc': label},
-            'sub_title_text': time_text,
+            'sub_title_text': '\n'.join(filter(None, [reason_text, time_text])),
             'horizontal_content_list': [{'keyname': k, 'value': short(v, 26)} for k, v in fields],
             'jump_list': [{'type': 1, 'title': action, 'url': url}],
             'card_action': {'type': 1, 'url': url},

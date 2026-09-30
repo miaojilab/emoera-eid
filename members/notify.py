@@ -167,15 +167,19 @@ def _notify_async(fn, *args, **kwargs):
     return thread
 
 
-def notify_verification_event(*, event: str, application_id, username: str, identity_type: str = '', status: str = '') -> list[bool]:
+def notify_verification_event(*, event: str, application_id, username: str,
+                              applicant_name: str = '', identity_type: str = '',
+                              status: str = '', reason: str = '') -> list[bool]:
     return _notify_application(kind='verification', event=event, application_id=application_id,
-                               username=username, identity_type=identity_type, status=status)
+                               username=username, applicant_name=applicant_name,
+                               identity_type=identity_type, status=status, reason=reason)
 
 
-def notify_club_event(*, event: str, application_id, username: str, status: str = '') -> list[bool]:
-    # Omit real names, email, student identifiers and Offer confirmation tokens.
+def notify_club_event(*, event: str, application_id, username: str,
+                      applicant_name: str = '', status: str = '', reason: str = '') -> list[bool]:
     return _notify_application(kind='club', event=event, application_id=application_id,
-                               username=username, status=status)
+                               username=username, applicant_name=applicant_name,
+                               status=status, reason=reason)
 
 
 def notify_verification_event_async(**event):
