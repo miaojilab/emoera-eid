@@ -26,6 +26,7 @@ class Command(BaseCommand):
         permissions_to_add = [
             ('can_review_club_applications', '可以审核社团申请'),
             ('can_send_interview_notifications', '可以发送笔试通知'),
+            ('can_send_interview_invitations', '可以发送面试通知'),
             ('can_send_offer_notifications', '可以发送录取通知'),
         ]
         

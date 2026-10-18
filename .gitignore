@@ -11,6 +11,8 @@ db.sqlite3
 .venv/
 venv/
 env/
+.tmp/
+.mysql/
 
 staticfiles/
 static/

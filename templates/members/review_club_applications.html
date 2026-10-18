@@ -18,6 +18,8 @@
                                     <option value="pending" {% if status == 'pending' %}selected{% endif %}>待审核</option>
                                     <option value="interview_sent"
                                             {% if status == 'interview_sent' %}selected{% endif %}>笔试通知已发送</option>
+                                    <option value="interview_invited"
+                                            {% if status == 'interview_invited' %}selected{% endif %}>面试通知已发送</option>
                                     <option value="offer_sent"
                                             {% if status == 'offer_sent' %}selected{% endif %}>录取通知已发送</option>
                                     <option value="offer_confirmed"
@@ -34,7 +36,7 @@
                     <div class="card-body p-4">
                         <!-- 统计信息 -->
                         <div class="row mb-4">
-                            <div class="col-md-2 col-sm-6 mb-3">
+                            <div class="col-6 col-md-4 col-xl mb-3">
                                 <div class="stat-card text-center">
                                     <div class="stat-icon bg-primary">
                                         <i class="fas fa-clipboard-list text-white" aria-hidden="true"></i>
@@ -43,7 +45,7 @@
                                     <small class="text-muted">总申请数</small>
                                 </div>
                             </div>
-                            <div class="col-md-2 col-sm-6 mb-3">
+                            <div class="col-6 col-md-4 col-xl mb-3">
                                 <div class="stat-card text-center">
                                     <div class="stat-icon bg-warning">
                                         <i class="fas fa-clock text-white" aria-hidden="true"></i>
@@ -52,7 +54,7 @@
                                     <small class="text-muted">待审核</small>
                                 </div>
                             </div>
-                            <div class="col-md-2 col-sm-6 mb-3">
+                            <div class="col-6 col-md-4 col-xl mb-3">
                                 <div class="stat-card text-center">
                                     <div class="stat-icon bg-info">
                                         <i class="fas fa-envelope text-white" aria-hidden="true"></i>
@@ -61,7 +63,16 @@
                                     <small class="text-muted">笔试通知已发</small>
                                 </div>
                             </div>
-                            <div class="col-md-2 col-sm-6 mb-3">
+                            <div class="col-6 col-md-4 col-xl mb-3">
+                                <div class="stat-card text-center">
+                                    <div class="stat-icon bg-secondary">
+                                        <i class="fas fa-comments text-white" aria-hidden="true"></i>
+                                    </div>
+                                    <h4 class="stat-number">{{ interview_invited_count }}</h4>
+                                    <small class="text-muted">面试通知已发</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4 col-xl mb-3">
                                 <div class="stat-card text-center">
                                     <div class="stat-icon bg-success">
                                         <i class="fas fa-trophy text-white" aria-hidden="true"></i>
@@ -70,7 +81,7 @@
                                     <small class="text-muted">录取通知已发</small>
                                 </div>
                             </div>
-                            <div class="col-md-2 col-sm-6 mb-3">
+                            <div class="col-6 col-md-4 col-xl mb-3">
                                 <div class="stat-card text-center">
                                     <div class="stat-icon bg-primary">
                                         <i class="fas fa-handshake text-white" aria-hidden="true"></i>
@@ -79,7 +90,7 @@
                                     <small class="text-muted">已确认</small>
                                 </div>
                             </div>
-                            <div class="col-md-2 col-sm-6 mb-3">
+                            <div class="col-6 col-md-4 col-xl mb-3">
                                 <div class="stat-card text-center">
                                     <div class="stat-icon bg-danger">
                                         <i class="fas fa-times text-white" aria-hidden="true"></i>
@@ -112,7 +123,7 @@
                                             <td>{{ app.member.user.username }}</td>
                                             <td>{{ app.member.user.email }}</td>
                                             <td>
-                                                <span class="badge bg-{% if app.status == 'pending' %}warning{% elif app.status == 'interview_sent' %}info{% elif app.status == 'offer_sent' %}success{% elif app.status == 'offer_confirmed' %}primary{% elif app.status == 'rejected' %}danger{% endif %}">
+                                                <span class="badge bg-{% if app.status == 'pending' %}warning{% elif app.status == 'interview_sent' %}info{% elif app.status == 'interview_invited' %}secondary{% elif app.status == 'offer_sent' %}success{% elif app.status == 'offer_confirmed' %}primary{% elif app.status == 'rejected' %}danger{% endif %}">
                                                     {{ app.get_status_display }}
                                                 </span>
                                             </td>
@@ -136,6 +147,19 @@
                                                     <button class="btn btn-sm btn-outline-info me-1"
                                                             onclick="resendInterview({{ app.id }}, '{{ app.real_name }}')">
                                                         <i class="fas fa-redo me-1" aria-hidden="true"></i>重发笔试
+                                                    </button>
+                                                    <button class="btn btn-sm btn-primary me-1"
+                                                            onclick="sendInterviewInvite({{ app.id }}, '{{ app.real_name }}')">
+                                                        面试通知
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger"
+                                                            onclick="rejectApp({{ app.id }}, '{{ app.real_name }}')">
+                                                        拒绝
+                                                    </button>
+                                                {% elif app.status == "interview_invited" %}
+                                                    <button class="btn btn-sm btn-outline-secondary me-1"
+                                                            onclick="resendInterviewInvite({{ app.id }}, '{{ app.real_name }}')">
+                                                        <i class="fas fa-redo me-1" aria-hidden="true"></i>重发面试
                                                     </button>
                                                     <button class="btn btn-sm btn-success me-1"
                                                             onclick="sendOffer({{ app.id }}, '{{ app.real_name }}')">
@@ -241,6 +265,66 @@ async function resendInterview(id, name) {
             
             if (response.ok) {
                 Swal.fire('成功', '笔试通知重发成功', 'success').then(() => location.reload());
+            } else {
+                Swal.fire('失败', '重发失败', 'error');
+            }
+        } catch (error) {
+            Swal.fire('错误', '重发时发生错误', 'error');
+        }
+    }
+}
+
+async function sendInterviewInvite(id, name) {
+    const result = await Swal.fire({
+        title: '发送面试通知',
+        text: `确定要向 ${name} 发送面试通知吗？`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: '确定发送',
+        cancelButtonText: '取消'
+    });
+    
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch(`/club/admin/interview-invite/${id}/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken }
+            });
+            
+            if (response.ok) {
+                Swal.fire('成功', '面试通知发送成功', 'success').then(() => location.reload());
+            } else {
+                Swal.fire('失败', '发送失败', 'error');
+            }
+        } catch (error) {
+            Swal.fire('错误', '发送时发生错误', 'error');
+        }
+    }
+}
+
+async function resendInterviewInvite(id, name) {
+    const result = await Swal.fire({
+        title: '重发面试通知',
+        text: `确定要向 ${name} 重新发送面试通知吗？`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '确定重发',
+        cancelButtonText: '取消',
+        html: `
+            <p>确定要向 <strong>${name}</strong> 重新发送面试通知吗？</p>
+            <p class="text-muted small">注意：这将重新发送邮件通知</p>
+        `
+    });
+    
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch(`/club/admin/resend-interview-invite/${id}/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken }
+            });
+            
+            if (response.ok) {
+                Swal.fire('成功', '面试通知重发成功', 'success').then(() => location.reload());
             } else {
                 Swal.fire('失败', '重发失败', 'error');
             }

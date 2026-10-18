@@ -57,12 +57,13 @@
                                     <div class="progress mb-3" style="height: 8px;">
                                         <div class="progress-bar bg-primary"
                                              role="progressbar"
-                                             style="width: {% if application.status == 'pending' %}25%{% elif application.status == 'interview_sent' %}50%{% elif application.status == 'offer_sent' %}75%{% elif application.status == 'offer_confirmed' %}100%{% else %}25%{% endif %}">
+                                             style="width: {% if application.status == 'pending' %}20%{% elif application.status == 'interview_sent' %}40%{% elif application.status == 'interview_invited' %}60%{% elif application.status == 'offer_sent' %}80%{% elif application.status == 'offer_confirmed' %}100%{% else %}20%{% endif %}">
                                         </div>
                                     </div>
                                     <div class="d-flex justify-content-between">
-                                        <small class="text-{% if application.status == 'pending' or application.status == 'interview_sent' or application.status == 'offer_sent' or application.status == 'offer_confirmed' %}primary{% else %}muted{% endif %} fw-bold">提交申请</small>
-                                        <small class="text-{% if application.status == 'interview_sent' or application.status == 'offer_sent' or application.status == 'offer_confirmed' %}primary{% else %}muted{% endif %} fw-bold">笔试通知</small>
+                                        <small class="text-{% if application.status != 'rejected' %}primary{% else %}muted{% endif %} fw-bold">提交申请</small>
+                                        <small class="text-{% if application.status == 'interview_sent' or application.status == 'interview_invited' or application.status == 'offer_sent' or application.status == 'offer_confirmed' %}primary{% else %}muted{% endif %} fw-bold">笔试通知</small>
+                                        <small class="text-{% if application.status == 'interview_invited' or application.status == 'offer_sent' or application.status == 'offer_confirmed' %}primary{% else %}muted{% endif %} fw-bold">面试通知</small>
                                         <small class="text-{% if application.status == 'offer_sent' or application.status == 'offer_confirmed' %}primary{% else %}muted{% endif %} fw-bold">录取通知</small>
                                         <small class="text-{% if application.status == 'offer_confirmed' %}primary{% else %}muted{% endif %} fw-bold">完成</small>
                                     </div>
@@ -90,6 +91,20 @@
                                                     <p class="mb-2">已向您的邮箱发送笔试通知，请查收。如有疑问，请联系管理员。</p>
                                                     {% if application.interview_sent_at %}
                                                         <small class="text-muted">笔试通知发送时间：{{ application.interview_sent_at|date:"Y年m月d日 H:i" }}</small>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% elif application.status == "interview_invited" %}
+                                        <div class="alert alert-success border-0 shadow-sm"
+                                             style="border-radius: 10px">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-comments fs-2 me-3 text-success" aria-hidden="true"></i>
+                                                <div>
+                                                    <h5 class="alert-heading mb-2">恭喜您通过笔试</h5>
+                                                    <p class="mb-2">已向您的邮箱发送面试通知，请查收并按邮件说明做好准备。如有疑问，请联系管理员。</p>
+                                                    {% if application.interview_invited_at %}
+                                                        <small class="text-muted">面试通知发送时间：{{ application.interview_invited_at|date:"Y年m月d日 H:i" }}</small>
                                                     {% endif %}
                                                 </div>
                                             </div>

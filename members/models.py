@@ -77,6 +77,7 @@ class ClubApplication(models.Model):
     STATUS_CHOICES = [
         ('pending', '待审核'),
         ('interview_sent', '笔试通知已发送'),
+        ('interview_invited', '面试通知已发送'),
         ('offer_sent', '录取通知已发送'),
         ('offer_confirmed', 'Offer已确认'),
         ('rejected', '已拒绝'),
@@ -103,6 +104,7 @@ class ClubApplication(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='申请时间')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
     interview_sent_at = models.DateTimeField(null=True, blank=True, verbose_name='笔试通知发送时间')
+    interview_invited_at = models.DateTimeField(null=True, blank=True, verbose_name='面试通知发送时间')
     offer_sent_at = models.DateTimeField(null=True, blank=True, verbose_name='录取通知发送时间')
     
     class Meta:
@@ -111,6 +113,7 @@ class ClubApplication(models.Model):
         permissions = [
             ("can_review_club_applications", "Can review club applications"),
             ("can_send_interview_notifications", "Can send interview notifications"),
+            ("can_send_interview_invitations", "Can send interview invitations"),
             ("can_send_offer_notifications", "Can send offer notifications"),
         ]
     
