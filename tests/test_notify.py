@@ -35,7 +35,8 @@ class NotificationTests(unittest.TestCase):
 
     def test_all_states_and_separate_read_only_review_routes(self):
         states = {'verification': ['pending', 'approved', 'rejected'],
-                  'club': ['pending', 'interview_sent', 'offer_sent', 'offer_confirmed', 'rejected']}
+                  'club': ['pending', 'interview_sent', 'interview_invited',
+                           'offer_sent', 'offer_confirmed', 'rejected']}
         for kind, statuses in states.items():
             for status in statuses:
                 with self.subTest(kind=kind, status=status):

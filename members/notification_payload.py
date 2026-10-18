@@ -10,7 +10,8 @@ from django.utils import timezone
 
 STATUS = {
     'pending': '待审核', 'approved': '已通过', 'rejected': '已拒绝',
-    'interview_sent': '笔试通知已发送', 'offer_sent': '录取通知已发送',
+    'interview_sent': '笔试通知已发送', 'interview_invited': '面试通知已发送',
+    'offer_sent': '录取通知已发送',
     'offer_confirmed': 'Offer 已确认', 'paused': '已暂停',
     'suspended': '已暂停', 'inactive': '已暂停',
 }

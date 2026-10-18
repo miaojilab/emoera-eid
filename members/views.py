@@ -19,9 +19,11 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 import secrets
 import string
+import base64
+import hashlib
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
-from django.utils.html import strip_tags
+from django.utils.html import strip_tags, escape
 from .notify import (notify_club_event, notify_club_event_async,
                      notify_verification_event, notify_verification_event_async)
 
@@ -29,23 +31,167 @@ logger = logging.getLogger(__name__)
 
 def oauth_login(request):
     """初始化 OAuth2 登录流程"""
+    # 新版 OIDC 客户端：授权码 + PKCE S256
+    code_verifier, code_challenge = _build_pkce_pair()
+    state = str(uuid.uuid4())
     oauth_params = {
         'client_id': settings.OAUTH2_PROVIDER['CLIENT_ID'],
-        'response_type': 'token',
+        'response_type': 'code',
         'redirect_uri': settings.OAUTH_CALLBACK_URL,
-        'scope': 'read',
-        'state': str(uuid.uuid4())  # 生成随机 state 用于防止 CSRF
+        'scope': settings.OAUTH2_PROVIDER.get('SCOPE', 'openid profile email'),
+        'state': state,
+        'code_challenge': code_challenge,
+        'code_challenge_method': 'S256',
     }
     
-    # 将 state 保存在 session 中
+    # state 防 CSRF，code_verifier 供回调时换取 token
     request.session['oauth_state'] = oauth_params['state']
+    request.session['oauth_code_verifier'] = code_verifier
     
     # 构建授权 URL
     auth_url = f"{settings.OAUTH2_PROVIDER['OAUTH2_SERVER_URL']}/oauth/authorize?{urlencode(oauth_params)}"
     return redirect(auth_url)
 
+def _build_pkce_pair():
+    """生成 PKCE 的 code_verifier / code_challenge（S256）。"""
+    code_verifier = secrets.token_urlsafe(64)
+    digest = hashlib.sha256(code_verifier.encode('ascii')).digest()
+    code_challenge = base64.urlsafe_b64encode(digest).decode('ascii').rstrip('=')
+    return code_verifier, code_challenge
+
+
+def exchange_code_for_token(code, code_verifier):
+    """用授权码换取 access_token（OIDC 令牌接口要求表单编码）。"""
+    provider = settings.OAUTH2_PROVIDER
+    payload = {
+        'grant_type': 'authorization_code',
+        'code': code,
+        'redirect_uri': settings.OAUTH_CALLBACK_URL,
+        'client_id': provider['CLIENT_ID'],
+        'client_secret': provider['CLIENT_SECRET'],
+    }
+    if code_verifier:
+        payload['code_verifier'] = code_verifier
+
+    try:
+        response = requests.post(provider['OAUTH2_TOKEN_URL'], data=payload, timeout=15)
+        result = response.json()
+    except ValueError:
+        logger.error("OIDC token endpoint returned non-JSON response (HTTP %s)",
+                     getattr(response, 'status_code', '?'))
+        return None
+    except requests.RequestException:
+        logger.exception("Failed to reach OIDC token endpoint")
+        return None
+
+    if not isinstance(result, dict):
+        logger.error("OIDC token endpoint returned invalid payload")
+        return None
+    if result.get('code') not in (None, 200):
+        logger.warning("OIDC token endpoint error: %s", result.get('message'))
+        return None
+
+    data = result.get('data') if isinstance(result.get('data'), dict) else result
+    access_token = data.get('access_token') or data.get('accessToken')
+    if not access_token:
+        logger.error("OIDC token endpoint response missing access_token")
+        return None
+    return {'access_token': access_token, 'raw': data}
+
+
+def _coerce_oauth_id(value):
+    """把 OIDC 的 sub/id 统一成 Member.oauth_id 需要的整数。"""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        digest = hashlib.sha256(str(value).encode('utf-8')).hexdigest()
+        return int(digest[:8], 16) % 2147483647
+
+
+def get_oauth_user_info_oidc(access_token):
+    """通过 OIDC userinfo 接口（Bearer Token）获取并归一化用户信息。"""
+    provider = settings.OAUTH2_PROVIDER
+    try:
+        response = requests.get(
+            provider['OAUTH2_USERINFO_URL'],
+            headers={'Authorization': f'Bearer {access_token}'},
+            timeout=15,
+        )
+        result = response.json()
+    except ValueError:
+        logger.error("OIDC userinfo returned non-JSON response (HTTP %s)",
+                     getattr(response, 'status_code', '?'))
+        return None
+    except requests.RequestException:
+        logger.exception("Failed to reach OIDC userinfo endpoint")
+        return None
+
+    if not isinstance(result, dict):
+        logger.error("OIDC userinfo returned invalid payload")
+        return None
+    if result.get('code') not in (None, 200):
+        logger.warning("OIDC userinfo API returned an error: %s", result.get('message'))
+        return None
+
+    claims = result.get('data') if isinstance(result.get('data'), dict) else result
+    if not isinstance(claims, dict) or not claims:
+        logger.error("OIDC userinfo returned empty claims")
+        return None
+
+    oauth_id = _coerce_oauth_id(claims.get('id', claims.get('sub')))
+    username = (claims.get('preferred_username') or claims.get('username')
+                or claims.get('name') or f'user_{oauth_id}')
+    return {
+        'id': oauth_id,
+        'username': str(username),
+        'email': claims.get('email') or '',
+        'avatar': claims.get('picture') or claims.get('avatar') or '',
+        'bio': claims.get('bio') or claims.get('nickname') or '',
+    }
+
+
 def oauth_callback(request):
-    return render(request, 'members/callback.html')
+    """OIDC 回调：校验 state → code 换 token → 拉取用户信息 → 登录。"""
+    error = request.GET.get('error')
+    if error:
+        logger.warning("OIDC authorize returned error: %s", error)
+        messages.error(request, '登录失败：授权未完成，请重试。')
+        return redirect('index')
+
+    code = request.GET.get('code')
+    if not code:
+        logger.warning("OIDC callback missing code")
+        messages.error(request, '登录失败：未收到授权码，请重试。')
+        return redirect('index')
+
+    expected_state = request.session.pop('oauth_state', None)
+    state = request.GET.get('state')
+    if not state or state != expected_state:
+        logger.warning("OAuth state validation failed")
+        messages.error(request, '登录失败：安全校验未通过，请重新登录。')
+        return redirect('index')
+
+    code_verifier = request.session.pop('oauth_code_verifier', None)
+    token_data = exchange_code_for_token(code, code_verifier)
+    if not token_data:
+        messages.error(request, '登录失败：无法获取访问令牌，请稍后重试。')
+        return redirect('index')
+
+    user_info = get_oauth_user_info_oidc(token_data['access_token'])
+    if not user_info:
+        messages.error(request, '登录失败：无法获取用户信息，请稍后重试。')
+        return redirect('index')
+
+    try:
+        user = create_or_update_user(user_info)
+    except Exception:
+        logger.exception("Failed to create/update member from OIDC claims")
+        messages.error(request, '登录失败：账号信息同步失败，请联系管理员。')
+        return redirect('index')
+
+    auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+    logger.info("OIDC login succeeded for oauth_id=%s", user_info['id'])
+    return redirect('member_profile')
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -564,6 +710,7 @@ def review_club_applications(request):
     total_count = applications.count()
     pending_count = applications.filter(status='pending').count()
     interview_sent_count = applications.filter(status='interview_sent').count()
+    interview_invited_count = applications.filter(status='interview_invited').count()
     offer_sent_count = applications.filter(status='offer_sent').count()
     offer_confirmed_count = applications.filter(status='offer_confirmed').count()
     rejected_count = applications.filter(status='rejected').count()
@@ -581,6 +728,7 @@ def review_club_applications(request):
         'total_count': total_count,
         'pending_count': pending_count,
         'interview_sent_count': interview_sent_count,
+        'interview_invited_count': interview_invited_count,
         'offer_sent_count': offer_sent_count,
         'offer_confirmed_count': offer_confirmed_count,
         'rejected_count': rejected_count,
@@ -599,17 +747,75 @@ def send_interview_notification(request, application_id):
         application.save()
         
         # 发送笔试通知邮件
-        send_interview_email(application.member.user.email, application.real_name)
+        success = send_interview_email(application.member.user.email, application.real_name)
 
-        notify_club_event_async(
-            event='已发送笔试通知',
-            application_id=application.id,
-            username=application.member.user.username,
-            applicant_name=application.real_name,
-            status=application.status,
-        )
+        if success:
+            notify_club_event_async(
+                event='已发送笔试通知',
+                application_id=application.id,
+                username=application.member.user.username,
+                applicant_name=application.real_name,
+                status=application.status,
+            )
+            messages.success(request, f'已向 {application.real_name} 发送笔试通知')
+        else:
+            messages.error(request, f'向 {application.real_name} 发送笔试通知失败，请检查邮件配置')
+    
+    return redirect('review_club_applications')
+
+
+@permission_required('members.can_send_interview_invitations', raise_exception=True)
+def send_interview_invite_notification(request, application_id):
+    """发送面试通知"""
+    if request.method == 'POST':
+        application = get_object_or_404(ClubApplication, id=application_id)
         
-        messages.success(request, f'已向 {application.real_name} 发送笔试通知')
+        # 面试是笔试之后的独立阶段，只有已发送笔试通知的申请才能发送
+        if application.status != 'interview_sent':
+            messages.error(request, f'{application.real_name} 的申请状态不是"笔试通知已发送"，无法发送面试通知')
+            return redirect('review_club_applications')
+        
+        # 更新状态
+        application.status = 'interview_invited'
+        application.interview_invited_at = timezone.now()
+        application.save()
+        
+        # 发送面试通知邮件
+        success = send_interview_invite_email(application.member.user.email, application.real_name)
+
+        if success:
+            notify_club_event_async(
+                event='已发送面试通知',
+                application_id=application.id,
+                username=application.member.user.username,
+                applicant_name=application.real_name,
+                status=application.status,
+            )
+            messages.success(request, f'已向 {application.real_name} 发送面试通知')
+        else:
+            messages.error(request, f'向 {application.real_name} 发送面试通知失败，请检查邮件配置')
+    
+    return redirect('review_club_applications')
+
+
+@permission_required('members.can_send_interview_invitations', raise_exception=True)
+def resend_interview_invite_notification(request, application_id):
+    """重发面试通知"""
+    if request.method == 'POST':
+        application = get_object_or_404(ClubApplication, id=application_id)
+        
+        # 验证申请状态（只有已发送面试通知的申请才能重发）
+        if application.status != 'interview_invited':
+            messages.error(request, f'{application.real_name} 的申请状态不是"面试通知已发送"，无法重发')
+            return redirect('review_club_applications')
+        
+        # 重新发送面试通知邮件（不改变状态和时间戳）
+        success = send_interview_invite_email(application.member.user.email, application.real_name)
+        
+        if success:
+            messages.success(request, f'已向 {application.real_name} 重新发送面试通知')
+        else:
+            messages.error(request, f'向 {application.real_name} 重发面试通知失败，请检查邮件配置')
     
     return redirect('review_club_applications')
 
@@ -648,17 +854,19 @@ def send_offer_notification(request, application_id):
         application.save()
         
         # 发送录取通知邮件
-        send_offer_email(application.member.user.email, application.real_name, str(application.offer_uuid))
+        success = send_offer_email(application.member.user.email, application.real_name, str(application.offer_uuid))
 
-        notify_club_event_async(
-            event='已发送录取通知',
-            application_id=application.id,
-            username=application.member.user.username,
-            applicant_name=application.real_name,
-            status=application.status,
-        )
-        
-        messages.success(request, f'已向 {application.real_name} 发送录取通知')
+        if success:
+            notify_club_event_async(
+                event='已发送录取通知',
+                application_id=application.id,
+                username=application.member.user.username,
+                applicant_name=application.real_name,
+                status=application.status,
+            )
+            messages.success(request, f'已向 {application.real_name} 发送录取通知')
+        else:
+            messages.error(request, f'向 {application.real_name} 发送录取通知失败，请检查邮件配置')
     
     return redirect('review_club_applications')
 
@@ -720,14 +928,23 @@ def confirm_offer(request, offer_uuid):
 
 # ===== 邮件发送功能 =====
 
+def _email_greeting(to_name, *, html=True):
+    """邮件称呼：有姓名用「{姓名}同学你好，」，否则默认「同学你好，」。"""
+    name = (to_name or '').strip()
+    if not name:
+        return '同学你好，'
+    return f'{escape(name) if html else name}同学你好，'
+
+
 def send_interview_email(to_email, to_name):
     """发送笔试通知邮件"""
     try:
         subject = '欢迎您参加E时代笔试！'
         
         # HTML 邮件内容（基于提供的PHP示例）
+        greeting = _email_greeting(to_name)
         html_message = f'''
-        <p>同学您好，<br>感谢您参与E时代的笔试。为了及时获取最新消息，请关注我们的QQ交流群。</p>
+        <p>{greeting}<br>感谢您参与E时代的笔试。为了及时获取最新消息，请关注我们的QQ交流群。</p>
         <img src="https://eaccount.emoera.com/photos/bishitongzhi.png" alt="E时代" style="width:500px;height:auto;">
         <br><br>
         <p>E时代团队向您表达由衷的祝贺，祝您在本次笔试中取得佳绩。我们也期待更多优秀的同学与我们一起成长，共创辉煌。<br>祝顺利通过！<br>E时代研发中心</p>
@@ -752,6 +969,45 @@ def send_interview_email(to_email, to_name):
         return False
 
 
+def send_interview_invite_email(to_email, to_name):
+    """发送面试通知邮件"""
+    try:
+        subject = 'E时代面试通知'
+
+        # 固定 HTML 模板（与笔试 / Offer 邮件一致，直接改这里即可）
+        greeting = _email_greeting(to_name)
+        html_message = f'''
+        <p>{greeting}</p>
+        <p>感谢您参加E时代的笔试，恭喜您通过初筛！我们诚挚邀请您参加面试，期待与您进一步交流。</p>
+        <p><strong>面试安排：</strong>本次面试采用线上线下分批进行。</p>
+        <p><strong>线下面试：</strong>宜宾 2C410，早上 10:00</p>
+        <p><strong>线上面试：</strong>腾讯会议，下午 14:00 开始，会议号稍后通过 QQ 交流群公布</p>
+        <p><strong>线上顺序：</strong>线上面试的同学请按 QQ 交流群内公布的顺序依次进入会议</p>
+        <p><strong>联系人：</strong>E时代研发中心 · QQ 交流群</p>
+        <img src="https://eaccount.emoera.com/photos/bishitongzhi.png" alt="E时代" style="width:500px;height:auto;">
+        <br><br>
+        <p>请提前做好准备，并及时关注 QQ 交流群内的最新通知。祝您面试顺利！<br>E时代研发中心</p>
+        '''
+
+        # 纯文本版本
+        plain_message = strip_tags(html_message)
+
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[to_email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+
+        logger.info("Interview invite email sent")
+        return True
+    except Exception as e:
+        logger.exception("Failed to send interview invite email")
+        return False
+
+
 def send_offer_email(to_email, to_name, offer_uuid):
     """发送录取通知邮件"""
     confirm_url = ''
@@ -768,8 +1024,10 @@ def send_offer_email(to_email, to_name, offer_uuid):
         confirm_url = f"{base_url}{confirm_path}"
         
         # HTML 邮件内容（基于提供的PHP示例）
+        greeting = _email_greeting(to_name)
+        greeting_plain = _email_greeting(to_name, html=False)
         html_message = f'''
-        <p>您好， {to_name},</p>
+        <p>{greeting}</p>
         <p>感谢您对E时代的关注与支持！我们的社团文化是开放包容，真诚热爱，欢迎您的加入。</p>
         <p>请点击以下链接确认您的 Offer：</p>
         <a href='{confirm_url}'>确认 Offer</a>
@@ -783,7 +1041,7 @@ def send_offer_email(to_email, to_name, offer_uuid):
         '''
         
         # 纯文本版本
-        plain_message = f'''您好，{to_name},
+        plain_message = f'''{greeting_plain}
 
 感谢您对E时代的关注与支持！我们的社团文化是开放包容，真诚热爱，欢迎您的加入。
 

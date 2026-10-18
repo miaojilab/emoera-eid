@@ -188,10 +188,14 @@ WHITENOISE_MIMETYPES = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# 添加OAuth2相关配置
+# 添加OAuth2 / OIDC 相关配置（新版 OIDC 客户端：授权码 + PKCE S256）
+OAUTH2_API_BASE = os.getenv('OAUTH2_API_URL', 'https://accountapi.emoera.com').rstrip('/')
 OAUTH2_PROVIDER = {
     'OAUTH2_SERVER_URL': os.getenv('OAUTH2_SERVER_URL', 'https://account.emoera.com'),
-    'OAUTH2_API_URL': os.getenv('OAUTH2_API_URL', 'https://accountapi.emoera.com'),
+    'OAUTH2_API_URL': OAUTH2_API_BASE,
+    'OAUTH2_TOKEN_URL': os.getenv('OAUTH2_TOKEN_URL', OAUTH2_API_BASE + '/api/oidc/token'),
+    'OAUTH2_USERINFO_URL': os.getenv('OAUTH2_USERINFO_URL', OAUTH2_API_BASE + '/api/oidc/userinfo'),
+    'SCOPE': os.getenv('OAUTH2_SCOPE', 'openid profile email'),
     'CLIENT_ID': get_required_env('OAUTH2_CLIENT_ID'),
     'CLIENT_SECRET': get_required_env('OAUTH2_CLIENT_SECRET'),
     'SCOPES': {
