@@ -26,8 +26,8 @@
                 期待与您一同开启新的征程，互相支持，共同成长。
             </p>
             {% if confirmed %}
-                <button class="offer-btn accepted-btn" disabled id="acceptedBtn">
-                    <i class="fas fa-check-circle me-2" aria-hidden="true"></i>已接受
+                <button type="button" class="offer-btn accepted-btn" id="acceptedBtn">
+                    <i class="fas fa-check-circle me-2" aria-hidden="true"></i>已接受录取 · 再放烟花
                 </button>
                 <div class="mt-3">
                     <small class="text-muted">
@@ -288,14 +288,23 @@ async function acceptOffer() {
         }
         button.innerHTML = '<i class="fas fa-check-circle me-2" aria-hidden="true"></i>已接受录取';
         button.className = 'offer-btn accepted-btn';
+        button.id = 'acceptedBtn';
+        button.removeEventListener('click', acceptOffer);
+        button.addEventListener('click', celebrateAcceptance);
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-check-circle me-2" aria-hidden="true"></i>已接受录取 · 再放烟花';
         createConfetti(button);
         showToast('录取已确认', '欢迎加入 E时代！', 'success');
-        setTimeout(() => location.reload(), 1200);
     } catch (_) {
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-redo me-2" aria-hidden="true"></i>重试确认';
         showToast('未能确认录取', '请检查网络后重试；如仍无法确认，请联系管理员。', 'error', false);
     }
+}
+
+// Celebrating an accepted offer is local only; it must never submit again.
+function celebrateAcceptance(event) {
+    createConfetti(event.currentTarget);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -304,6 +313,10 @@ document.addEventListener('DOMContentLoaded', function() {
         button.innerHTML = '<i class="fas fa-handshake me-2" aria-hidden="true"></i>接受录取';
         button.disabled = false;
         button.addEventListener('click', acceptOffer);
+    }
+    const acceptedButton = document.getElementById('acceptedBtn');
+    if (acceptedButton) {
+        acceptedButton.addEventListener('click', celebrateAcceptance);
     }
 });
 
