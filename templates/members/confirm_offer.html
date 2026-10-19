@@ -27,7 +27,7 @@
             </p>
             {% if confirmed %}
                 <button type="button" class="offer-btn accepted-btn" id="acceptedBtn">
-                    <i class="fas fa-check-circle me-2" aria-hidden="true"></i>已接受录取 · 再放烟花
+                    <i class="fas fa-check-circle me-2" aria-hidden="true"></i>已接受offer
                 </button>
                 <div class="mt-3">
                     <small class="text-muted">
@@ -115,6 +115,8 @@ function createConfetti(sourceElement = null) {
     if (!canvas) {
         initConfettiSystem();
     }
+    // The previous animation hides this canvas after its particles finish.
+    canvas.style.display = 'block';
     
     const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#FFD700', '#FF6B6B', '#4ecdc4', '#45b7d1', '#ff9a9e', '#fecfef'];
     
@@ -286,13 +288,12 @@ async function acceptOffer() {
         if (!response.ok || !['success', 'already_confirmed'].includes(data.status)) {
             throw new Error('acceptance_failed');
         }
-        button.innerHTML = '<i class="fas fa-check-circle me-2" aria-hidden="true"></i>已接受录取';
         button.className = 'offer-btn accepted-btn';
         button.id = 'acceptedBtn';
         button.removeEventListener('click', acceptOffer);
         button.addEventListener('click', celebrateAcceptance);
         button.disabled = false;
-        button.innerHTML = '<i class="fas fa-check-circle me-2" aria-hidden="true"></i>已接受录取 · 再放烟花';
+        button.innerHTML = '<i class="fas fa-check-circle me-2" aria-hidden="true"></i>已接受offer';
         createConfetti(button);
         showToast('录取已确认', '欢迎加入 E时代！', 'success');
     } catch (_) {
@@ -310,7 +311,7 @@ function celebrateAcceptance(event) {
 document.addEventListener('DOMContentLoaded', function() {
     const button = document.getElementById('offerBtn');
     if (button) {
-        button.innerHTML = '<i class="fas fa-handshake me-2" aria-hidden="true"></i>接受录取';
+        button.innerHTML = '<i class="fas fa-handshake me-2" aria-hidden="true"></i>接受offer';
         button.disabled = false;
         button.addEventListener('click', acceptOffer);
     }
