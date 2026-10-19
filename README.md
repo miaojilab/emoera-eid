@@ -162,3 +162,9 @@ start_server.py    # 启动辅助脚本
 `NOTIFY_PUBLIC_BASE_URL` 默认为 `https://neweid.emoera.com`，用于生成品牌 Logo 和审核页面链接。身份认证进入身份审核列表，社团事件进入社团审核列表并选中对应状态；仍需登录及原有分项审核权限。不会在卡片中直接通过、拒绝或确认 Offer。卡片不包含真实姓名、学号、邮箱或 Offer 确认码。通用 `notify_text` / `notify_event` 保持纯文本行为。
 
 通知测试（模拟 HTTP，不向群发消息）：`python3 -m unittest discover -s tests -p 'test_notify.py'`。
+
+邮件流程回归测试：`python3 -m django test tests --settings=tests.settings`。该命令使用独立的内存 SQLite 数据库和模拟发信，不读取生产 `.env`，也不发送真实邮件或群通知。
+
+笔试和 Offer 首次通知只有在邮件后端接受一封邮件后才更新申请状态、发送群通知；失败时保留原状态与时间戳并显示错误。SMTP 接受不代表收件箱最终投递成功；旧版留下的“已发送”记录也不能作为投递凭证，应核实后再安排补发。
+
+Offer 已确认后，确认链接只展示结果；重复提交不会更改原确认时间或重复发送群通知。尚未发出或已拒绝的 Offer 不能通过确认链接接受。

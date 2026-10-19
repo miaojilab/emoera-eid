@@ -8,6 +8,7 @@ import json
 import logging
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
 from .models import Member, VerificationApplication, ClubApplication
 import uuid
@@ -20,6 +21,10 @@ from django.views.decorators.csrf import csrf_exempt
 import secrets
 import string
 from django.core.mail import send_mail
+from django.core.exceptions import ImproperlyConfigured
+from django.core.mail import get_connection
+from django.core.mail.backends.smtp import EmailBackend as SMTPBackend
+from django.core.validators import validate_email
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from .notify import (notify_club_event, notify_club_event_async,
@@ -593,13 +598,14 @@ def send_interview_notification(request, application_id):
     if request.method == 'POST':
         application = get_object_or_404(ClubApplication, id=application_id)
         
-        # 更新状态
+        # Only advance the application after the mail backend accepts the message.
+        if not send_interview_email(application.member.user.email, application.real_name):
+            messages.error(request, f'向 {application.real_name} 发送笔试通知失败，请检查邮件配置；申请状态未变更')
+            return redirect('review_club_applications')
+
         application.status = 'interview_sent'
         application.interview_sent_at = timezone.now()
         application.save()
-        
-        # 发送笔试通知邮件
-        send_interview_email(application.member.user.email, application.real_name)
 
         notify_club_event_async(
             event='已发送笔试通知',
@@ -642,13 +648,13 @@ def send_offer_notification(request, application_id):
     if request.method == 'POST':
         application = get_object_or_404(ClubApplication, id=application_id)
         
-        # 更新状态
+        if not send_offer_email(application.member.user.email, application.real_name, str(application.offer_uuid)):
+            messages.error(request, f'向 {application.real_name} 发送录取通知失败，请检查邮件配置；申请状态未变更')
+            return redirect('review_club_applications')
+
         application.status = 'offer_sent'
         application.offer_sent_at = timezone.now()
         application.save()
-        
-        # 发送录取通知邮件
-        send_offer_email(application.member.user.email, application.real_name, str(application.offer_uuid))
 
         notify_club_event_async(
             event='已发送录取通知',
@@ -686,26 +692,38 @@ def resend_offer_notification(request, application_id):
 
 
 @csrf_exempt
+@never_cache
+@require_http_methods(['GET', 'POST'])
 def confirm_offer(request, offer_uuid):
     """确认Offer页面"""
     try:
         application = ClubApplication.objects.get(offer_uuid=offer_uuid)
         
         if request.method == 'POST':
-            if application.status == 'offer_sent':
-                application.status = 'offer_confirmed'
-                application.offer_confirmed_at = timezone.now()
-                application.save()
+            now = timezone.now()
+            # A conditional update lets only one request confirm this offer,
+            # including when simultaneous requests read the same prior state.
+            confirmed = ClubApplication.objects.filter(
+                pk=application.pk, status='offer_sent',
+            ).update(status='offer_confirmed', offer_confirmed_at=now, updated_at=now)
+            if confirmed:
                 notify_club_event_async(
                     event='Offer 已确认',
                     application_id=application.id,
                     username=application.member.user.username,
                     applicant_name=application.real_name,
-                    status=application.status,
+                    status='offer_confirmed',
                 )
                 return JsonResponse({'status': 'success'})
-            else:
+            application.refresh_from_db()
+            if application.status == 'offer_confirmed':
                 return JsonResponse({'status': 'already_confirmed'})
+            return JsonResponse({'status': 'not_available'}, status=409)
+
+        if application.status not in ('offer_sent', 'offer_confirmed'):
+            return render(request, 'members/confirm_offer.html', {
+                'error': '当前申请尚无可确认的录取通知'
+            }, status=409)
         
         return render(request, 'members/confirm_offer.html', {
             'application': application,
@@ -719,6 +737,29 @@ def confirm_offer(request, offer_uuid):
 
 
 # ===== 邮件发送功能 =====
+
+def _send_club_email(subject, plain_message, html_message, to_email):
+    """Return whether one message was accepted; never treat zero as success."""
+    validate_email(to_email)
+    if not settings.DEFAULT_FROM_EMAIL:
+        raise ImproperlyConfigured('DEFAULT_FROM_EMAIL is required to send club notifications')
+    connection = get_connection(fail_silently=False)
+    if isinstance(connection, SMTPBackend) and not connection.host:
+        raise ImproperlyConfigured('EMAIL_HOST is required to send SMTP notifications')
+    sent = send_mail(
+        subject=subject,
+        message=plain_message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[to_email],
+        html_message=html_message,
+        fail_silently=False,
+        connection=connection,
+    )
+    if sent != 1:
+        logger.error('Club notification email was not accepted by the mail backend')
+        return False
+    return True
+
 
 def send_interview_email(to_email, to_name):
     """发送笔试通知邮件"""
@@ -736,14 +777,8 @@ def send_interview_email(to_email, to_name):
         # 纯文本版本
         plain_message = strip_tags(html_message)
         
-        send_mail(
-            subject=subject,
-            message=plain_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[to_email],
-            html_message=html_message,
-            fail_silently=False,
-        )
+        if not _send_club_email(subject, plain_message, html_message, to_email):
+            return False
         
         logger.info("Interview notification email sent")
         return True
@@ -795,14 +830,8 @@ def send_offer_email(to_email, to_name, offer_uuid):
 再次感谢您的加入
 E时代研发中心'''
         
-        send_mail(
-            subject=subject,
-            message=plain_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[to_email],
-            html_message=html_message,
-            fail_silently=False,
-        )
+        if not _send_club_email(subject, plain_message, html_message, to_email):
+            return False
         
         logger.info("Offer email sent")
         return True
