@@ -61,6 +61,20 @@ class OfferConfirmationTests(TestCase):
         self.assertEqual(self.snapshot(), before)
         self.notify.assert_called_once()
 
+    def test_confirmed_applicant_can_reopen_result_from_both_status_pages(self):
+        self.application.status = 'offer_confirmed'
+        self.application.offer_confirmed_at = datetime(2026, 10, 1, tzinfo=timezone.utc)
+        self.application.save()
+        self.client.force_login(self.application.member.user)
+        before = self.snapshot()
+        for route in ['club_application', 'application_status']:
+            with self.subTest(route=route):
+                response = self.client.get(reverse(route))
+                self.assertContains(response, '查看录取结果 · 再放烟花')
+                self.assertContains(response, 'href="' + self.url + '"')
+        self.assertEqual(self.snapshot(), before)
+        self.notify.assert_not_called()
+
     def test_stale_request_cannot_replace_another_requests_confirmation(self):
         stale = ClubApplication.objects.get(pk=self.application.pk)
         earlier = datetime(2026, 10, 1, tzinfo=timezone.utc)

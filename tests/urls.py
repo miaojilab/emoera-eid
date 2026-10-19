@@ -4,6 +4,7 @@ from members import views
 
 urlpatterns = [
     path('club/', views.club_application_page, name='club_application'),
+    path('club/status/', views.application_status_page, name='application_status'),
     path('club/admin/', views.review_club_applications, name='review_club_applications'),
     path('club/admin/interview/<int:application_id>/', views.send_interview_notification,
          name='send_interview_notification'),
